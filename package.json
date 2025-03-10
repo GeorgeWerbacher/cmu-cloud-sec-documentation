@@ -30,6 +30,8 @@
   },
   "devDependencies": {
     "@types/node": "18.11.10",
+    "eslint": "^8",
+    "eslint-config-next": "15.2.1",
     "typescript": "^4.9.3"
   }
 }
