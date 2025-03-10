@@ -5,7 +5,13 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start"
+    "start": "next start",
+    "init-rag": "NODE_OPTIONS='--loader ts-node/esm' ts-node --project tsconfig.json scripts/initVectorStore.ts",
+    "test-rag": "NODE_OPTIONS='--loader ts-node/esm' ts-node --project tsconfig.json scripts/testRAG.ts",
+    "init-rag:simple": "node scripts/init-rag.js",
+    "test-rag:simple": "node scripts/test-rag.js",
+    "init-direct": "node scripts/initDirect.js",
+    "check-env": "node scripts/check-env.js"
   },
   "repository": {
     "type": "git",
@@ -21,7 +27,15 @@
     "@ai-sdk/anthropic": "^1.1.15",
     "@ai-sdk/openai": "^1.2.1",
     "@anthropic-ai/sdk": "^0.39.0",
+    "@langchain/anthropic": "^0.3.15",
+    "@langchain/community": "^0.3.34",
+    "@langchain/core": "^0.3.42",
+    "@langchain/openai": "^0.4.4",
+    "@supabase/supabase-js": "^2.49.1",
+    "@vercel/postgres": "^0.10.0",
     "ai": "^4.1.54",
+    "dotenv": "^16.4.7",
+    "langchain": "^0.3.19",
     "next": "^14.0.4",
     "nextra": "^2.13.2",
     "nextra-theme-docs": "^2.13.2",
@@ -32,6 +46,7 @@
     "@types/node": "18.11.10",
     "eslint": "^8",
     "eslint-config-next": "15.2.1",
+    "ts-node": "^10.9.2",
     "typescript": "^4.9.3"
   }
 }
