@@ -1,7 +1,22 @@
 {
-  "overview": "Overview",
-  "lab1": "Lab 1: Cloud Security Fundamentals",
-  "lab2": "Lab 2: Identity & Access Management",
-  "lab3": "Lab 3: Secure Cloud Architecture",
-  "lab4": "Lab 4: Threat Detection & Response"
+  "overview": {
+    "title": "Overview",
+    "type": "page"
+  },
+  "lab1": {
+    "title": "Lab 1: Cloud Security Fundamentals",
+    "type": "page"
+  },
+  "lab2": {
+    "title": "Lab 2: Identity & Access Management",
+    "type": "page"
+  },
+  "lab3": {
+    "title": "Lab 3: Secure Cloud Architecture",
+    "type": "page"
+  },
+  "lab4": {
+    "title": "Lab 4: Threat Detection & Response",
+    "type": "page"
+  }
 }

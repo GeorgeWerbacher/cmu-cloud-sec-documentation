@@ -1,27 +1,7 @@
 {
   "index": "Introduction",
-  "labs": {
-    "title": "Labs",
-    "type": "menu",
-    "items": {
-      "overview": "Overview",
-      "lab1": "Lab 1: Cloud Security Fundamentals",
-      "lab2": "Lab 2: Identity & Access Management",
-      "lab3": "Lab 3: Secure Cloud Architecture",
-      "lab4": "Lab 4: Threat Detection & Response"
-    }
-  },
-  "resources": {
-    "title": "Resources",
-    "type": "menu",
-    "items": {
-      "overview": "Overview",
-      "cloud-providers": "Cloud Service Providers",
-      "security-tools": "Security Tools",
-      "compliance": "Regulatory Compliance",
-      "best-practices": "Best Practices & Guidelines"
-    }
-  },
+  "labs": "Labs",
+  "resources": "Resources",
   "ai-assistant": {
     "title": "AI Assistant",
     "type": "page"
