@@ -1,0 +1,75 @@
+# Lab 1: Cloud Security Fundamentals
+
+## Overview
+
+This introductory lab will establish your foundation in cloud security by guiding you through the deployment of basic cloud resources with essential security controls. You'll gain hands-on experience implementing security measures across multiple layers of the cloud stack.
+
+## Prerequisites
+
+- AWS free tier account (instructions for setup provided below)
+- Basic understanding of cloud computing concepts
+- Laptop with a modern web browser
+- AWS CLI installed (optional but recommended)
+
+## Learning Objectives
+
+By the end of this lab, you'll be able to:
+
+- Deploy and configure a secure cloud environment in AWS
+- Implement secure network configurations using VPCs and security groups
+- Configure proper storage security for S3 buckets
+- Set up basic monitoring and logging via CloudTrail
+- Conduct a fundamental security assessment of your deployment
+
+## Lab Tasks
+
+### Task 1: Account Setup and Security Hardening
+
+1. Create an AWS free tier account if you don't already have one
+2. Enable multi-factor authentication (MFA) for your root account
+3. Create an IAM user with appropriate permissions for this lab
+4. Implement password policies according to best practices
+
+### Task 2: Secure Network Configuration
+
+1. Create a Virtual Private Cloud (VPC) with public and private subnets
+2. Configure Network Access Control Lists (NACLs) to restrict traffic
+3. Set up security groups for granular access control
+4. Deploy a bastion host for secure administrative access
+
+### Task 3: Secure Storage Implementation
+
+1. Create an S3 bucket with appropriate access controls
+2. Enable encryption for data at rest
+3. Implement bucket policies to prevent public access
+4. Configure access logging for the bucket
+
+### Task 4: Monitoring and Logging
+
+1. Enable AWS CloudTrail across all regions
+2. Set up CloudWatch alarms for specific security events
+3. Configure log retention policies
+4. Create a simple dashboard to visualize security metrics
+
+## Submission Requirements
+
+Submit the following items through the course submission portal:
+
+1. Screenshots documenting the completion of each task
+2. A security assessment report (1-2 pages) identifying:
+   - Security controls implemented
+   - Potential vulnerabilities in your deployment
+   - Recommendations for additional security measures
+3. Answers to the reflection questions provided at the end of the lab
+
+## Additional Challenges (Optional)
+
+- Implement AWS Config to monitor for compliance violations
+- Set up GuardDuty for threat detection
+- Create an automated response using Lambda for specific security events
+
+## Resources
+
+- [AWS Security Best Practices](https://docs.aws.amazon.com/wellarchitected/latest/security-pillar/welcome.html)
+- [IAM User Guide](https://docs.aws.amazon.com/IAM/latest/UserGuide/introduction.html)
+- [S3 Security Documentation](https://docs.aws.amazon.com/AmazonS3/latest/userguide/security-best-practices.html)

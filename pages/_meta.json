@@ -1,15 +1,42 @@
 {
   "index": "Introduction",
-  "another": "Another Page",
-  "advanced": "Advanced (A Folder)",
+  "labs": {
+    "title": "Labs",
+    "type": "menu",
+    "items": {
+      "overview": "Overview",
+      "lab1": "Lab 1: Cloud Security Fundamentals",
+      "lab2": "Lab 2: Identity & Access Management",
+      "lab3": "Lab 3: Secure Cloud Architecture",
+      "lab4": "Lab 4: Threat Detection & Response"
+    }
+  },
+  "resources": {
+    "title": "Resources",
+    "type": "menu",
+    "items": {
+      "overview": "Overview",
+      "cloud-providers": "Cloud Service Providers",
+      "security-tools": "Security Tools",
+      "compliance": "Regulatory Compliance",
+      "best-practices": "Best Practices & Guidelines"
+    }
+  },
+  "ai-assistant": {
+    "title": "AI Assistant",
+    "type": "page"
+  },
   "about": {
     "title": "About",
     "type": "page"
   },
+  "---": {
+    "type": "separator"
+  },
   "contact": {
     "title": "Contact ↗",
     "type": "page",
-    "href": "https://twitter.com/shuding_",
+    "href": "mailto:your-email@cmu.edu",
     "newWindow": true
   }
 }
