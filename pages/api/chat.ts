@@ -2,6 +2,8 @@ import { anthropic } from '@ai-sdk/anthropic';
 import { streamText } from 'ai';
 
 export const runtime = 'edge';
+// Force dynamic execution for streaming to work properly in production
+export const dynamic = 'force-dynamic';
 
 export default async function handler(req: Request) {
   try {
@@ -21,8 +23,13 @@ export default async function handler(req: Request) {
       messages,
     });
 
-    // Return the stream response
-    return result.toDataStreamResponse();
+    // Return the result directly with the correct method for the Vercel AI SDK
+    return result.toDataStreamResponse({
+      headers: {
+        'Cache-Control': 'no-cache, no-transform',
+        'Connection': 'keep-alive',
+      }
+    });
     
   } catch (error) {
     console.error('Error processing chat request:', error);
