@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { AppProps } from 'next/app';
+import '../styles/globals.css'; // Import global styles which includes chat styles
 
 // Dynamically import the FloatingChatButton with SSR disabled
 const FloatingChatButton = dynamic(

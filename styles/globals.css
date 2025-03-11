@@ -1,0 +1,10 @@
+/* Import chat variables */
+@import 'chat-variables.css';
+
+/* Import chat components styling */
+@import 'chat.css';
+
+/* Import syntax highlighting styles */
+@import 'chat-syntax.css';
+
+/* Rest of the global styles */ 

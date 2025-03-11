@@ -5,12 +5,14 @@ import React from 'react';
 
 // @ts-ignore - Ignore TypeScript errors for React hooks
 const { useState, useEffect } = React as any;
-import { ChatComponent } from './ChatComponent';
+import { UnifiedChat } from './UnifiedChat';
+// CSS is imported globally in _app.tsx
 
 interface FloatingChatButtonProps {}
 
 export function FloatingChatButton({}: FloatingChatButtonProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [isFullScreen, setIsFullScreen] = useState(false);
   const [mounted, setMounted] = useState(false);
 
   // Use effect to mark as mounted on client
@@ -20,6 +22,14 @@ export function FloatingChatButton({}: FloatingChatButtonProps) {
 
   const toggleChat = () => {
     setIsOpen(!isOpen);
+    // Reset full screen when closing
+    if (isOpen) {
+      setIsFullScreen(false);
+    }
+  };
+
+  const toggleFullScreen = () => {
+    setIsFullScreen(!isFullScreen);
   };
 
   // Don't render anything until we're on the client
@@ -28,15 +38,38 @@ export function FloatingChatButton({}: FloatingChatButtonProps) {
   return (
     <div className="floating-chat-container">
       {isOpen && (
-        <div className="floating-chat-window">
+        <div className={`floating-chat-panel ${isFullScreen ? 'fullscreen' : ''}`}>
           <div className="chat-header">
-            <h3>Cloud Security Assistant</h3>
-            <button onClick={toggleChat} className="close-button">
-              ×
-            </button>
+            <div className="header-content">
+              <div className="header-icon">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 13.5997 2.37562 15.1116 3.04346 16.4525C3.22094 16.8088 3.28001 17.2161 3.17712 17.6006L2.58151 19.8267C2.32295 20.793 3.20701 21.677 4.17335 21.4185L6.39939 20.8229C6.78393 20.72 7.19121 20.7791 7.54753 20.9565C8.88837 21.6244 10.4003 22 12 22Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </div>
+              <h3>AI Teaching Assistant</h3>
+            </div>
+            <div className="header-actions">
+              <button onClick={toggleFullScreen} className="fullscreen-button" aria-label={isFullScreen ? "Exit fullscreen" : "Enter fullscreen"}>
+                {isFullScreen ? (
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M8 3V6C8 6.53043 7.78929 7.03914 7.41421 7.41421C7.03914 7.78929 6.53043 8 6 8H3M21 8H18C17.4696 8 16.9609 7.78929 16.5858 7.41421C16.2107 7.03914 16 6.53043 16 6V3M16 21V18C16 17.4696 16.2107 16.9609 16.5858 16.5858C16.9609 16.2107 17.4696 16 18 16H21M3 16H6C6.53043 16 7.03914 16.2107 7.41421 16.5858C7.78929 16.9609 8 17.4696 8 18V21" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                ) : (
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M15 3H21M21 3V9M21 3L14 10M9 21H3M3 21V15M3 21L10 14" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                )}
+              </button>
+              <button onClick={toggleChat} className="close-button" aria-label="Close chat">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M18 6L6 18" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                  <path d="M6 6L18 18" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              </button>
+            </div>
           </div>
           <div className="chat-body">
-            <ChatComponent isFloating={true} />
+            <UnifiedChat isFloating={true} isFullScreen={isFullScreen} />
           </div>
         </div>
       )}
@@ -46,114 +79,17 @@ export function FloatingChatButton({}: FloatingChatButtonProps) {
         className={`floating-chat-button ${isOpen ? 'open' : ''}`}
         aria-label="Toggle chat assistant"
       >
-        {isOpen ? '×' : '?'}
+        {isOpen ? (
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M18 6L6 18" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+            <path d="M6 6L18 18" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+        ) : (
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 13.5997 2.37562 15.1116 3.04346 16.4525C3.22094 16.8088 3.28001 17.2161 3.17712 17.6006L2.58151 19.8267C2.32295 20.793 3.20701 21.677 4.17335 21.4185L6.39939 20.8229C6.78393 20.72 7.19121 20.7791 7.54753 20.9565C8.88837 21.6244 10.4003 22 12 22Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        )}
       </button>
-
-      <style jsx>{`
-        .floating-chat-container {
-          position: fixed;
-          bottom: 20px;
-          right: 20px;
-          z-index: 1000;
-          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
-        }
-        
-        .floating-chat-button {
-          width: 56px;
-          height: 56px;
-          border-radius: 50%;
-          background: #2563eb;
-          color: white;
-          border: none;
-          font-size: 24px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          cursor: pointer;
-          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-          transition: all 0.3s ease;
-        }
-        
-        .floating-chat-button:hover {
-          background: #1d4ed8;
-          transform: scale(1.05);
-        }
-        
-        .floating-chat-button.open {
-          background: #1f2937;
-        }
-        
-        .floating-chat-window {
-          position: absolute;
-          bottom: 70px;
-          right: 0;
-          width: 350px;
-          height: 500px;
-          background: white;
-          border-radius: 12px;
-          overflow: hidden;
-          display: flex;
-          flex-direction: column;
-          box-shadow: 0 4px 24px rgba(0, 0, 0, 0.15);
-          animation: slideIn 0.3s ease;
-        }
-        
-        @keyframes slideIn {
-          from {
-            opacity: 0;
-            transform: translateY(20px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-        
-        .chat-header {
-          padding: 12px 16px;
-          background: #2563eb;
-          color: white;
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-        }
-        
-        .chat-header h3 {
-          margin: 0;
-          font-size: 16px;
-          font-weight: 500;
-        }
-        
-        .close-button {
-          background: transparent;
-          border: none;
-          color: white;
-          font-size: 24px;
-          cursor: pointer;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          width: 24px;
-          height: 24px;
-          padding: 0;
-        }
-        
-        .chat-body {
-          flex: 1;
-          overflow: hidden;
-          display: flex;
-          flex-direction: column;
-        }
-        
-        @media (max-width: 600px) {
-          .floating-chat-window {
-            width: calc(100vw - 40px);
-            height: 60vh;
-            bottom: 70px;
-            right: 0;
-          }
-        }
-      `}</style>
     </div>
   );
 }
