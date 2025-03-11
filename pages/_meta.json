@@ -4,11 +4,17 @@
   "resources": "Resources",
   "ai-assistant": {
     "title": "AI Assistant",
-    "type": "page"
+    "type": "page",
+    "href": "/"
   },
   "about": {
     "title": "About",
     "type": "page"
+  },
+  "admin": {
+    "title": "Admin",
+    "type": "page",
+    "display": "hidden"
   },
   "---": {
     "type": "separator"

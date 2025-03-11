@@ -1,139 +1,173 @@
-# CMU Cloud Security Documentation
+# CMU Cloud Security Documentation Site
 
-This repository contains the documentation for the CMU Cloud Security course, featuring an AI-powered chatbot to answer questions about cloud security concepts.
+A comprehensive documentation site for Cloud Security built with Next.js, featuring a powerful Retrieval-Augmented Generation (RAG) AI assistant. This project combines a user-friendly documentation interface with an intelligent AI assistant that uses your own documentation content to provide accurate and contextually relevant answers.
 
-## Project Overview
+## Features
 
-The documentation site is built with:
-- [Next.js](https://nextjs.org/) - React framework
-- [Nextra](https://nextra.site/) - Documentation theme
-- [Vercel AI SDK](https://sdk.vercel.ai/) - AI chat functionality 
-- [Anthropic Claude](https://www.anthropic.com/) - AI model powering the chat
+- **Documentation with Nextra**: Clean, searchable, and well-organized documentation using Nextra's docs theme
+- **AI-Powered Assistant**: Intelligent chatbot that answers questions based on your documentation content
+- **Vector Search**: Semantic search capabilities using Supabase and pgvector
+- **Cost-Optimized**: Implements caching and usage tracking to minimize AI API costs
+- **Analytics Dashboard**: Admin interface to track API usage, token consumption, and estimated costs
+- **Multi-Model Support**: Works with both Claude (Anthropic) and GPT (OpenAI) models
+
+## Tech Stack
+
+- **Frontend**: Next.js, React, Nextra
+- **Database**: Supabase (PostgreSQL with pgvector)
+- **AI Models**: Claude by Anthropic, GPT by OpenAI
+- **Embeddings**: OpenAI embeddings for vector search
+- **Deployment**: Vercel (recommended)
 
 ## Prerequisites
 
-Before getting started, ensure you have the following installed:
-
-- [Node.js](https://nodejs.org/) (v18 or newer)
-- [pnpm](https://pnpm.io/) (v8 or newer)
-- A code editor (VS Code recommended)
-- Git
+- Node.js 16+ and npm
+- Supabase account (free tier works for development)
+- Anthropic API key (for Claude)
+- OpenAI API key (for embeddings and optional GPT)
 
 ## Local Development Setup
 
-### 1. Clone the Repository
+1. **Clone the repository**
 
 ```bash
-git clone https://github.com/GeorgeWerbacher/cmu-cloud-sec-documentation.git
+git clone https://github.com/your-username/cmu-cloud-sec-documentation.git
 cd cmu-cloud-sec-documentation
 ```
 
-### 2. Install Dependencies
-
-This project uses pnpm as the package manager:
+2. **Install dependencies**
 
 ```bash
-pnpm install
+npm install
 ```
 
-### 3. Set Up Environment Variables
+3. **Set up environment variables**
 
-Create a `.env.local` file in the root directory:
+Create a `.env.local` file in the root directory with the following variables:
+
+```
+# AI API Keys
+ANTHROPIC_API_KEY=your-anthropic-api-key
+OPENAI_API_KEY=your-openai-api-key
+
+# Supabase
+SUPABASE_URL=your-supabase-project-url
+SUPABASE_SERVICE_ROLE_KEY=your-supabase-service-role-key
+NEXT_PUBLIC_SUPABASE_URL=your-supabase-project-url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-supabase-anon-key
+```
+
+4. **Set up Supabase**
+
+- Create a new Supabase project
+- In the SQL Editor, run the setup script located at `scripts/setup-all-tables.sql`
+- This will:
+  - Enable the pgvector extension
+  - Create the documents_embeddings table
+  - Create the API usage tracking tables
+  - Set up the necessary search functions
+
+5. **Verify environment setup**
 
 ```bash
-touch .env.local
+npm run check-env
 ```
 
-Add the following environment variables:
+6. **Generate embeddings**
 
-```
-ANTHROPIC_API_KEY=your_anthropic_api_key
-```
-
-You'll need to obtain an API key from [Anthropic](https://www.anthropic.com/) to use the Claude AI model.
-
-### 4. Start the Development Server
+This will process your documentation and create embeddings for vector search:
 
 ```bash
-pnpm dev
+npm run init-rag
 ```
 
-This will start the development server at [http://localhost:3000](http://localhost:3000).
+7. **Start the development server**
 
-## Project Structure
-
-```
-.
-├── components/               # React components
-│   ├── ChatComponent.tsx     # Chat interface component
-│   └── FloatingChatButton.tsx # Floating chat button
-├── pages/                    # Next.js pages
-│   ├── api/                  # API routes
-│   │   └── chat.ts           # Claude AI chat endpoint
-│   ├── _app.js               # Custom App component
-│   ├── _meta.json            # Navigation structure
-│   ├── index.mdx             # Homepage content
-│   └── about.mdx             # About page
-├── public/                   # Static assets
-├── .env.local                # Environment variables (create this)
-├── .eslintrc.json            # ESLint configuration
-├── .gitignore                # Git ignore rules
-├── next.config.js            # Next.js configuration
-├── package.json              # Project dependencies
-├── pnpm-lock.yaml           # pnpm lock file
-└── theme.config.tsx          # Nextra theme configuration
+```bash
+npm run dev
 ```
 
-## Available Commands
+8. **Access the site**
 
-- `pnpm dev` - Start the development server
-- `pnpm build` - Build the production version
-- `pnpm start` - Start the production server (after building)
+Open [http://localhost:3000](http://localhost:3000) in your browser.
+
+## Database Schema
+
+The project uses the following database tables:
+
+- **documents_embeddings**: Stores document chunks and their vector embeddings
+- **api_usage**: Tracks API requests and token usage
+- **response_cache**: Caches responses to reduce API costs
+
+## API Usage Tracking
+
+The project includes an admin dashboard to track AI API usage:
+
+- Access at `/admin/usage`
+- View total tokens used
+- Monitor request counts
+- Calculate estimated costs
+- Track usage over time
+
+## Deployment
+
+### Deploy to Vercel
+
+1. Push your repository to GitHub
+2. Import the project in Vercel
+3. Set the required environment variables
+4. Deploy
+
+For detailed deployment instructions, see our [Deployment Guide](docs/deployment.md).
+
+### Important pre-deployment steps:
+
+1. Run the embeddings generation process before deployment:
+   ```bash
+   npm run init-rag
+   ```
+2. Make sure your Supabase database tables are properly set up.
+
+## Adding Content
+
+To add new documentation:
+
+1. Create Markdown (.mdx) files in the `pages` directory
+2. Update navigation in the appropriate `_meta.json` files
+3. Regenerate embeddings to include new content:
+   ```bash
+   npm run init-rag
+   ```
 
 ## Troubleshooting
 
 ### Common Issues
 
-#### "Failed to parse stream string. Invalid code data"
+- **Missing Tables Error**: Run the SQL setup script in Supabase
+- **AI API Key Issues**: Verify your API keys are correctly set in environment variables
+- **Navigation Errors**: Check your `_meta.json` files for proper JSON formatting
+- **Embedding Errors**: Ensure your OpenAI API key has access to embeddings
 
-This error might occur if the streaming format from the Claude API doesn't match what the client expects. The current implementation handles this properly.
+For more troubleshooting, see the console logs or check the API response.
 
-#### Build Failures Related to Package Lock Files
+## Contributing
 
-If you're getting errors about package lock files:
+Contributions are welcome! Please feel free to submit a Pull Request.
 
-```bash
-# Remove Next.js build cache
-rm -rf .next
-# Ensure pnpm lock file is up to date
-pnpm install --no-frozen-lockfile
-```
-
-#### Streaming Issues with the AI Chat
-
-If the AI chat is not working properly:
-1. Check that your Anthropic API key is valid and properly set in `.env.local`
-2. Verify that the model specified in `pages/api/chat.ts` is available to your API key
-3. Check the console for any API errors
-
-## Deployment
-
-This project is set up to deploy to Vercel through a GitHub integration. When you push changes to the main branch, they are automatically deployed.
-
-### Vercel Environment Variables
-
-When deploying to Vercel, make sure to set the following environment variables:
-- `ANTHROPIC_API_KEY`: Your Anthropic API key
-
-## Working with the Claude AI Integration
-
-The AI chatbot uses Anthropic's Claude model to answer questions about cloud security. The integration is handled in `pages/api/chat.ts` using the Vercel AI SDK's streaming functionality.
-
-If you need to modify the AI behavior:
-1. Adjust the system message in `pages/api/chat.ts` to change how the AI responds
-2. Update the model version if needed (currently using `claude-3-7-sonnet-20250219`)
-3. Modify temperature or other parameters to control response randomness
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
 
 ## License
 
-MIT
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+## Acknowledgements
+
+- [Nextra](https://nextra.site/) for the documentation framework
+- [Supabase](https://supabase.com/) for the database and vector search
+- [Anthropic](https://www.anthropic.com/) for the Claude AI model
+- [OpenAI](https://openai.com/) for embeddings and GPT model
+- [Vercel](https://vercel.com/) for hosting and deployment

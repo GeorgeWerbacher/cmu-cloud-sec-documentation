@@ -1,50 +1,60 @@
 // Direct initialization script without TypeScript dependencies
-// Run with: node scripts/initDirect.js
+// Run with: npx ts-node scripts/initDirect.ts
+
+// Import required packages
+import dotenv from 'dotenv';
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { OpenAIEmbeddings } from '@langchain/openai';
 
 // Load environment variables
-require('dotenv').config({ path: '.env.local' });
-
-const { createClient } = require('@supabase/supabase-js');
-const fs = require('fs');
-const path = require('path');
-const { OpenAIEmbeddings } = require('@langchain/openai');
+dotenv.config({ path: '.env.local' });
 
 // Configure Supabase client
 const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
 const tableName = 'documents_embeddings';
 
+// Log configuration info
 console.log(`Supabase URL: ${supabaseUrl ? supabaseUrl : 'NOT SET'}`);
 console.log(`Supabase Key: ${supabaseKey ? '******' : 'NOT SET'}`);
 console.log(`OpenAI Key: ${process.env.OPENAI_API_KEY ? '******' : 'NOT SET'}`);
 console.log(`Table name: ${tableName}`);
 
-// Validate required environment variables
-if (!supabaseUrl) {
-  console.error('❌ Error: SUPABASE_URL or NEXT_PUBLIC_SUPABASE_URL is required!');
-  console.log('Please make sure you have properly set up your .env.local file with the required variables.');
-  process.exit(1);
+/**
+ * Validate required environment variables and create Supabase client
+ * @returns {SupabaseClient} - Supabase client instance
+ */
+function initSupabaseClient(): SupabaseClient {
+  // Validate required environment variables
+  if (!supabaseUrl) {
+    console.error('❌ Error: SUPABASE_URL or NEXT_PUBLIC_SUPABASE_URL is required!');
+    console.log('Please make sure you have properly set up your .env.local file with the required variables.');
+    process.exit(1);
+  }
+
+  if (!supabaseKey) {
+    console.error('❌ Error: SUPABASE_SERVICE_ROLE_KEY is required!');
+    console.log('Please make sure you have properly set up your .env.local file with the required variables.');
+    process.exit(1);
+  }
+
+  return createClient(supabaseUrl, supabaseKey);
 }
 
-if (!supabaseKey) {
-  console.error('❌ Error: SUPABASE_SERVICE_ROLE_KEY is required!');
-  console.log('Please make sure you have properly set up your .env.local file with the required variables.');
-  process.exit(1);
-}
-
-const client = createClient(supabaseUrl, supabaseKey);
-
-// Configure embeddings model
-const embeddings = new OpenAIEmbeddings({
-  openAIApiKey: process.env.OPENAI_API_KEY,
-});
-
-// Main function
-async function main() {
-  console.log('Initializing vector store in Supabase via Vercel (direct script)...');
+/**
+ * Main function to initialize vector store
+ */
+async function main(): Promise<void> {
+  console.log('Initializing vector store in Supabase via direct script...');
   console.log(`Current directory: ${process.cwd()}`);
   
   try {
+    // Initialize clients
+    const client = initSupabaseClient();
+    const embeddings = new OpenAIEmbeddings({
+      openAIApiKey: process.env.OPENAI_API_KEY,
+    });
+    
     // Check if table exists
     const { data, error } = await client
       .from(tableName)
@@ -83,7 +93,7 @@ async function main() {
   }
 }
 
+// Run the main function with error handling
 main().catch(error => {
   console.error('Uncaught error:', error);
-  process.exit(1);
-}); 
+  process.exit(1); 

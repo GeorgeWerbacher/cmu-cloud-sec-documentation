@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import dynamic from 'next/dynamic';
+import { AppProps } from 'next/app';
 
 // Dynamically import the FloatingChatButton with SSR disabled
 const FloatingChatButton = dynamic(
@@ -7,7 +8,7 @@ const FloatingChatButton = dynamic(
   { ssr: false }
 );
 
-export default function MyApp({ Component, pageProps }) {
+export default function MyApp({ Component, pageProps }: AppProps) {
   const [isAIAssistantPage, setIsAIAssistantPage] = useState(false);
   
   // Check if the current page is the AI assistant page
@@ -21,4 +22,4 @@ export default function MyApp({ Component, pageProps }) {
       {!isAIAssistantPage && <FloatingChatButton />}
     </>
   );
-}
+} 
