@@ -34,18 +34,18 @@
     "@vercel/postgres": "^0.10.0",
     "ai": "^4.1.54",
     "dotenv": "^16.4.7",
-    "flexsearch": "^0.7.31",
+    "flexsearch": "^0.7.43",
     "glob": "^11.0.1",
     "langchain": "^0.3.19",
-    "next": "^13.4.19",
-    "nextra": "^2.2.20",
-    "nextra-theme-docs": "^2.2.20",
+    "next": "^13.5.8",
+    "nextra": "^2.13.4",
+    "nextra-theme-docs": "^2.13.4",
     "react": "^18.2.0",
     "react-dom": "^18.2.0"
   },
   "devDependencies": {
     "@types/node": "18.11.10",
-    "eslint": "^8",
+    "eslint": "^8.57.1",
     "eslint-config-next": "15.2.1",
     "ts-node": "^10.9.2",
     "typescript": "^4.9.3"
