@@ -1,28 +1,18 @@
 {
   "index": "Introduction",
   "labs": "Labs",
-  "resources": "Resources",
-  "ai-assistant": {
-    "title": "AI Assistant",
-    "type": "page",
-    "href": "/"
-  },
-  "about": {
-    "title": "About",
-    "type": "page"
+  "---": {
+    "type": "separator"
   },
   "admin": {
     "title": "Admin",
     "type": "page",
     "display": "hidden"
   },
-  "---": {
-    "type": "separator"
-  },
   "contact": {
     "title": "Contact ↗",
     "type": "page",
-    "href": "mailto:your-email@cmu.edu",
+    "href": "mailto:gwerbach@andrew.cmu.edu",
     "newWindow": true
   }
 }
