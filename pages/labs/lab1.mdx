@@ -2,74 +2,306 @@
 
 ## Overview
 
-This introductory lab will establish your foundation in cloud security by guiding you through the deployment of basic cloud resources with essential security controls. You'll gain hands-on experience implementing security measures across multiple layers of the cloud stack.
+This introductory lab will establish your foundation in cloud security by guiding you through the setup and security hardening of an AWS account. You'll gain hands-on experience implementing essential security controls and monitoring for your cloud environment. The lab concludes with an optional introduction to Infrastructure as Code (IaC) using Terraform.
 
 ## Prerequisites
 
-- AWS free tier account (instructions for setup provided below)
-- Basic understanding of cloud computing concepts
+- Credit/debit card (required for AWS account creation, though you won't be charged if you stay within free tier limits)
+- Personal email address
+- Phone number for verification
 - Laptop with a modern web browser
-- AWS CLI installed (optional but recommended)
+- [AWS CLI](https://aws.amazon.com/cli/) installed (optional but recommended)
+- [Terraform](https://www.terraform.io/downloads) installed (only for optional section)
 
 ## Learning Objectives
 
 By the end of this lab, you'll be able to:
 
-- Deploy and configure a secure cloud environment in AWS
-- Implement secure network configurations using VPCs and security groups
-- Configure proper storage security for S3 buckets
-- Set up basic monitoring and logging via CloudTrail
-- Conduct a fundamental security assessment of your deployment
+- Create and secure an AWS account following security best practices
+- Set up Identity and Access Management (IAM) users with appropriate permissions
+- Implement multi-factor authentication (MFA) for enhanced security
+- Configure billing alerts to monitor and control cloud spending
+- (Optional) Deploy cloud resources using Infrastructure as Code with Terraform
 
-## Lab Tasks
+## Detailed Instructions
 
-### Task 1: Account Setup and Security Hardening
+### Task 1: AWS Account Creation
 
-1. Create an AWS free tier account if you don't already have one
-2. Enable multi-factor authentication (MFA) for your root account
-3. Create an IAM user with appropriate permissions for this lab
-4. Implement password policies according to best practices
+1. **Create an AWS Free Tier Account**
+   - Navigate to [AWS Free Tier](https://aws.amazon.com/free/)
+   - Click "Create a Free Account"
+   - Enter your email address and choose an AWS account name
+   - Follow the prompts to complete account creation:
+     - Provide personal information
+     - Enter payment information (required, but you won't be charged if you stay within free tier limits)
+     - Verify your identity via phone
+     - Select a support plan (Free tier is sufficient)
+   
+   > **Note**: After creating your account, you'll receive a confirmation email. It may take a few minutes for your account to be fully activated.
 
-### Task 2: Secure Network Configuration
+2. **Sign in to AWS Management Console**
+   - Go to [AWS Management Console](https://console.aws.amazon.com/)
+   - Sign in using your root account credentials (email and password)
+   - You should now see the AWS Management Console dashboard
 
-1. Create a Virtual Private Cloud (VPC) with public and private subnets
-2. Configure Network Access Control Lists (NACLs) to restrict traffic
-3. Set up security groups for granular access control
-4. Deploy a bastion host for secure administrative access
+### Task 2: Secure Your Root Account
 
-### Task 3: Secure Storage Implementation
+1. **Enable Multi-Factor Authentication (MFA) for Root Account**
+   - In the AWS Management Console, click on your account name in the top-right corner
+   - Select "Security credentials" from the dropdown menu
+   - In the "Multi-factor authentication (MFA)" section, click "Assign MFA device"
+   - Choose your preferred MFA device type:
+     - **Virtual MFA device**: Use an authenticator app on your smartphone (recommended)
+     - **U2F security key**: Use a physical security key
+     - **Hardware TOTP token**: Use a hardware token
+   - For virtual MFA:
+     - Install an authenticator app on your phone (e.g., Google Authenticator, Authy, Microsoft Authenticator)
+     - Scan the QR code displayed on screen
+     - Enter two consecutive MFA codes from your authenticator app
+     - Click "Assign MFA"
+   
+   > **Important**: Store your MFA device securely. If you lose access to your MFA device, recovery can be challenging.
 
-1. Create an S3 bucket with appropriate access controls
-2. Enable encryption for data at rest
-3. Implement bucket policies to prevent public access
-4. Configure access logging for the bucket
+2. **Create a Strong Password for Root Account**
+   - In the "Security credentials" page, scroll to the "Password" section
+   - Click "Edit" and set a strong, unique password
+   - Use a combination of uppercase, lowercase, numbers, and special characters
+   - Consider using a password manager to generate and store this password
 
-### Task 4: Monitoring and Logging
+### Task 3: Create an IAM User with Administrative Access
 
-1. Enable AWS CloudTrail across all regions
-2. Set up CloudWatch alarms for specific security events
-3. Configure log retention policies
-4. Create a simple dashboard to visualize security metrics
+1. **Navigate to IAM Dashboard**
+   - In the AWS Management Console, search for "IAM" in the search bar
+   - Click on "IAM" to open the IAM dashboard
+
+2. **Create a New IAM User**
+   - In the IAM dashboard, click "Users" in the left navigation pane
+   - Click "Add users"
+   - Enter a username (e.g., "admin" or your name)
+   - Select "Provide user access to the AWS Management Console"
+   - Choose "I want to create an IAM user"
+   - Set a custom password or auto-generate one
+   - Optionally uncheck "Users must create a new password at next sign-in" if this is your personal account
+   - Click "Next"
+
+3. **Assign Administrative Permissions**
+   - On the "Set permissions" page, select "Attach policies directly"
+   - Search for and select "AdministratorAccess" policy
+   - Click "Next"
+   - Review the user details and permissions
+   - Click "Create user"
+
+4. **Save Login Information**
+   - On the success page, you'll see the console sign-in URL
+   - Save this URL, along with the username and password
+   - Click "Return to users list"
+
+5. **Enable MFA for Your IAM User**
+   - From the users list, click on your newly created user
+   - Go to the "Security credentials" tab
+   - In the "Multi-factor authentication (MFA)" section, click "Assign MFA device"
+   - Follow the same steps as you did for the root account to set up MFA
+
+### Task 4: Set Up AWS Billing Alerts
+
+1. **Enable Billing Alerts**
+   - Sign in to AWS Management Console using your root account
+   - Click on your account name in the top-right corner
+   - Select "Account" from the dropdown menu
+   - Scroll down to "Billing preferences"
+   - Check the boxes for:
+     - "Receive PDF Invoice By Email"
+     - "Receive Free Tier Usage Alerts"
+     - "Receive Billing Alerts"
+   - Enter your email address for notifications
+   - Click "Update"
+
+2. **Create a CloudWatch Billing Alarm**
+   - Sign in to AWS Management Console using your IAM user
+   - Change the region to "US East (N. Virginia)" using the region selector in the top-right corner
+   - Search for "CloudWatch" in the search bar and select it
+   - In the CloudWatch dashboard, click "Alarms" in the left navigation pane
+   - Click "Create alarm"
+   - Click "Select metric"
+   - Click "Billing" and then "Total Estimated Charge"
+   - Select "EstimatedCharges" and click "Select metric"
+   - Under "Conditions", choose "Static" and "Greater than or equal to"
+   - Set the threshold value to 5 USD (or your preferred amount)
+   - Click "Next"
+   - Under "Notification", ensure "In alarm" is selected
+   - Choose "Create new topic"
+   - Enter a topic name (e.g., "BillingAlarm")
+   - Enter your email address
+   - Click "Create topic"
+   - Click "Next"
+   - Enter an alarm name (e.g., "BillingAlert")
+   - Click "Next"
+   - Review the alarm configuration and click "Create alarm"
+   - Check your email and confirm the subscription to receive alerts
+
+### Task 5: Explore the AWS Management Console
+
+1. **Navigate Through Key Services**
+   - Spend 10-15 minutes exploring the AWS Management Console
+   - Familiarize yourself with the navigation and search functionality
+   - Visit the dashboards for key services:
+     - EC2 (Compute)
+     - S3 (Storage)
+     - IAM (Security)
+     - CloudWatch (Monitoring)
+     - VPC (Networking)
+
+2. **Review AWS Free Tier Limits**
+   - Go to [AWS Free Tier](https://aws.amazon.com/free/) in a new tab
+   - Review the services and usage limits included in the free tier
+   - Note which services have a 12-month free period and which are always free
 
 ## Submission Requirements
 
 Submit the following items through the course submission portal:
 
-1. Screenshots documenting the completion of each task
-2. A security assessment report (1-2 pages) identifying:
-   - Security controls implemented
-   - Potential vulnerabilities in your deployment
-   - Recommendations for additional security measures
-3. Answers to the reflection questions provided at the end of the lab
+1. **Screenshots documenting the completion of each task:**
+   - AWS account creation confirmation
+   - MFA setup for root account (with sensitive information blurred)
+   - IAM user creation with administrative permissions
+   - MFA setup for IAM user (with sensitive information blurred)
+   - Billing alert configuration
+   - CloudWatch billing alarm setup
 
-## Additional Challenges (Optional)
+2. **Brief reflection (1 paragraph) on:**
+   - The importance of securing the root account
+   - The principle of least privilege in IAM permissions
+   - Your understanding of AWS's shared responsibility model
 
-- Implement AWS Config to monitor for compliance violations
-- Set up GuardDuty for threat detection
-- Create an automated response using Lambda for specific security events
+## Optional Challenge: Infrastructure as Code with Terraform
+
+This section introduces Terraform for deploying AWS resources using code. Terraform allows you to define infrastructure in configuration files that can be versioned, reused, and shared.
+
+### Prerequisites for Terraform Section
+
+- [Terraform installed](https://learn.hashicorp.com/tutorials/terraform/install-cli)
+- [AWS CLI installed](https://docs.aws.amazon.com/cli/latest/userguide/install-cliv2.html) and configured
+- Basic familiarity with command line operations
+
+### Setting Up Terraform for AWS
+
+1. **Configure AWS CLI**
+   - Open a terminal or command prompt
+   - Run `aws configure`
+   - Enter your IAM user's access key and secret key
+   - Enter your default region (e.g., `us-east-1`)
+   - Enter your preferred output format (e.g., `json`)
+
+2. **Create a Terraform Project**
+   - Create a new directory for your Terraform project
+   - Inside this directory, create a file named `main.tf`
+   - Add the following code to `main.tf`:
+
+   ```hcl
+   provider "aws" {
+     region = "us-east-1"  # or your preferred region
+   }
+
+   # Create an IAM user
+   resource "aws_iam_user" "terraform_user" {
+     name = "terraform-user"
+   }
+
+   # Create an IAM policy for read-only access
+   resource "aws_iam_policy" "readonly_policy" {
+     name        = "ReadOnlyAccess-Terraform"
+     description = "Provides read-only access to AWS services"
+     
+     policy = jsonencode({
+       Version = "2012-10-17"
+       Statement = [
+         {
+           Action   = [
+             "ec2:Describe*",
+             "s3:Get*",
+             "s3:List*"
+           ]
+           Effect   = "Allow"
+           Resource = "*"
+         }
+       ]
+     })
+   }
+
+   # Attach the policy to the user
+   resource "aws_iam_user_policy_attachment" "readonly_attachment" {
+     user       = aws_iam_user.terraform_user.name
+     policy_arn = aws_iam_policy.readonly_policy.arn
+   }
+
+   # Create an S3 bucket with encryption
+   resource "aws_s3_bucket" "secure_bucket" {
+     bucket = "secure-terraform-bucket-${random_string.suffix.result}"
+   }
+
+   # Generate a random suffix for the bucket name
+   resource "random_string" "suffix" {
+     length  = 8
+     special = false
+     upper   = false
+   }
+
+   # Enable encryption for the S3 bucket
+   resource "aws_s3_bucket_server_side_encryption_configuration" "bucket_encryption" {
+     bucket = aws_s3_bucket.secure_bucket.id
+     
+     rule {
+       apply_server_side_encryption_by_default {
+         sse_algorithm = "AES256"
+       }
+     }
+   }
+
+   # Block public access to the S3 bucket
+   resource "aws_s3_bucket_public_access_block" "block_public_access" {
+     bucket = aws_s3_bucket.secure_bucket.id
+     
+     block_public_acls       = true
+     block_public_policy     = true
+     ignore_public_acls      = true
+     restrict_public_buckets = true
+   }
+
+   # Output the name of the created bucket
+   output "bucket_name" {
+     value = aws_s3_bucket.secure_bucket.bucket
+   }
+   ```
+
+3. **Initialize Terraform**
+   - In your terminal, navigate to your Terraform project directory
+   - Run `terraform init`
+   - This will download the necessary providers and initialize your project
+
+4. **Plan Your Infrastructure**
+   - Run `terraform plan`
+   - Review the planned changes to ensure they match your expectations
+
+5. **Apply Your Infrastructure**
+   - Run `terraform apply`
+   - Type `yes` when prompted to confirm
+   - Wait for Terraform to create the resources
+   - Note the outputs, including your S3 bucket name
+
+6. **Verify Resources in AWS Console**
+   - Log in to the AWS Management Console
+   - Navigate to IAM and verify the new user was created
+   - Navigate to S3 and verify the new bucket was created with encryption enabled
+
+7. **Clean Up Resources (Important!)**
+   - When you're done experimenting, run `terraform destroy`
+   - Type `yes` when prompted to confirm
+   - This will remove all resources created by Terraform to avoid unexpected charges
 
 ## Resources
 
-- [AWS Security Best Practices](https://docs.aws.amazon.com/wellarchitected/latest/security-pillar/welcome.html)
-- [IAM User Guide](https://docs.aws.amazon.com/IAM/latest/UserGuide/introduction.html)
-- [S3 Security Documentation](https://docs.aws.amazon.com/AmazonS3/latest/userguide/security-best-practices.html)
+- [AWS Account Creation Guide](https://aws.amazon.com/premiumsupport/knowledge-center/create-and-activate-aws-account/)
+- [IAM Best Practices](https://docs.aws.amazon.com/IAM/latest/UserGuide/best-practices.html)
+- [AWS Free Tier FAQs](https://aws.amazon.com/free/free-tier-faqs/)
+- [Terraform AWS Provider Documentation](https://registry.terraform.io/providers/hashicorp/aws/latest/docs)
+- [AWS CLI Configuration Guide](https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-quickstart.html)
