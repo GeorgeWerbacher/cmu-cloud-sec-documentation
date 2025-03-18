@@ -1,0 +1,573 @@
+---
+title: 'Lab 2: Advanced IAM & Federation'
+description: 'Implement advanced IAM strategies and federation with AWS Identity Center'
+---
+
+# Lab 2: Advanced IAM & Federation
+
+## Overview
+
+Building on the foundation established in Lab 1, this lab delves deeper into Identity and Access Management (IAM) in AWS, focusing on advanced security practices, identity federation, and the AWS shared responsibility model. You'll gain hands-on experience implementing security controls that align with cloud security best practices and address common threat vectors in cloud environments.
+
+## Prerequisites
+
+- Completion of Lab 1: AWS Account Fundamentals
+- An AWS account with administrator access
+- AWS CLI installed and configured
+- Basic understanding of IAM concepts (users, roles, policies)
+- Web browser and internet connection
+
+## Learning Objectives
+
+By the end of this lab, you'll be able to:
+
+1. Analyze the cloud threat landscape and identify common attack vectors
+2. Apply the AWS Shared Responsibility Model to security decisions
+3. Implement advanced IAM configurations including custom policies and permission boundaries
+4. Set up cross-account access using IAM roles
+5. Configure AWS Identity Center for centralized federation
+6. Implement and test least privilege access patterns
+7. Use AWS CloudTrail to monitor and audit identity-related activities
+
+## The Cloud Threat Landscape
+
+Before diving into hands-on exercises, it's essential to understand the threat landscape in cloud environments. Cloud security differs from traditional on-premises security in several key ways:
+
+- **Shared responsibility**: Security is split between the cloud provider and customer
+- **API-driven infrastructure**: Everything is accessible via APIs, which can be both powerful and dangerous
+- **Identity-centric security**: In the cloud, identity is the new security perimeter
+- **Ephemeral resources**: Cloud resources are created and destroyed frequently, requiring dynamic security controls
+- **Global accessibility**: Cloud resources can be accessed from anywhere, increasing the attack surface
+
+Common cloud attack vectors include:
+
+1. **Identity theft**: Stolen credentials provide direct access to cloud resources
+2. **Misconfiguration**: Improperly configured services lead to unintended exposure
+3. **Insecure APIs**: Vulnerable APIs can be exploited to gain unauthorized access
+4. **Insufficient monitoring**: Lack of visibility allows attackers to operate undetected
+5. **Overprivileged access**: Excessive permissions increase the damage potential of compromised accounts
+
+The exercises in this lab will help you implement controls to mitigate these threats.
+
+## The AWS Shared Responsibility Model
+
+The AWS Shared Responsibility Model defines security responsibilities between AWS and customers:
+
+- **AWS** is responsible for "security **of** the cloud" (infrastructure, services, patches for managed services)
+- **Customers** are responsible for "security **in** the cloud" (data, configurations, access management)
+
+Understanding this model is crucial for effective cloud security. Throughout this lab, we'll highlight which aspects of security fall under customer responsibility and require your attention.
+
+## Detailed Instructions
+
+### Task 1: Implement Advanced IAM Policies
+
+In this task, you'll create custom IAM policies that implement least privilege access for different roles in your organization.
+
+1. **Create an IAM Policy for Security Auditors**
+   - Sign in to AWS Management Console with your administrator account
+   - Navigate to IAM > Policies > Create policy
+   - Switch to the JSON editor and paste the following policy:
+   ```json
+   {
+     "Version": "2012-10-17",
+     "Statement": [
+       {
+         "Sid": "AllowSecurityAudit",
+         "Effect": "Allow",
+         "Action": [
+           "cloudtrail:LookupEvents",
+           "cloudtrail:GetTrail",
+           "cloudtrail:ListTrails",
+           "cloudwatch:DescribeAlarms",
+           "config:Get*",
+           "config:Describe*",
+           "config:List*",
+           "iam:GenerateCredentialReport",
+           "iam:GenerateServiceLastAccessedDetails",
+           "iam:Get*",
+           "iam:List*",
+           "kms:ListKeys",
+           "kms:ListAliases",
+           "s3:GetBucketPolicy",
+           "s3:GetBucketLogging",
+           "s3:ListAllMyBuckets"
+         ],
+         "Resource": "*"
+       },
+       {
+         "Sid": "DenyWriteAccess",
+         "Effect": "Deny",
+         "Action": [
+           "iam:Add*",
+           "iam:Attach*",
+           "iam:Create*",
+           "iam:Delete*",
+           "iam:Detach*",
+           "iam:Put*",
+           "iam:Update*",
+           "s3:Put*",
+           "s3:Delete*",
+           "kms:Create*",
+           "kms:Disable*",
+           "kms:Delete*",
+           "kms:Update*"
+         ],
+         "Resource": "*"
+       }
+     ]
+   }
+   ```
+   - Name the policy "SecurityAuditorPolicy"
+   - Add meaningful tags (e.g., "Purpose": "Security Audit")
+   - Review and create the policy
+
+2. **Create an IAM Policy for Developers**
+   - Navigate to IAM > Policies > Create policy
+   - Use the JSON editor to create a policy that gives developers access to:
+     - Full access to their team's resources
+     - Read-only access to shared resources
+     - No access to production environments
+   ```json
+   {
+     "Version": "2012-10-17",
+     "Statement": [
+       {
+         "Sid": "AllowDevelopmentAccess",
+         "Effect": "Allow",
+         "Action": [
+           "ec2:*",
+           "rds:*",
+           "s3:*",
+           "dynamodb:*",
+           "lambda:*",
+           "cloudformation:*"
+         ],
+         "Resource": [
+           "arn:aws:ec2:*:*:instance/*",
+           "arn:aws:rds:*:*:db:dev-*",
+           "arn:aws:s3:::dev-*",
+           "arn:aws:dynamodb:*:*:table/dev-*",
+           "arn:aws:lambda:*:*:function:dev-*",
+           "arn:aws:cloudformation:*:*:stack/dev-*"
+         ],
+         "Condition": {
+           "StringEquals": {
+             "aws:ResourceTag/Environment": "Development"
+           }
+         }
+       },
+       {
+         "Sid": "AllowSharedResourceReadAccess",
+         "Effect": "Allow",
+         "Action": [
+           "s3:Get*",
+           "s3:List*",
+           "dynamodb:Get*",
+           "dynamodb:Query",
+           "dynamodb:Scan"
+         ],
+         "Resource": [
+           "arn:aws:s3:::shared-*",
+           "arn:aws:dynamodb:*:*:table/shared-*"
+         ]
+       },
+       {
+         "Sid": "DenyProductionAccess",
+         "Effect": "Deny",
+         "Action": "*",
+         "Resource": "*",
+         "Condition": {
+           "StringEquals": {
+             "aws:ResourceTag/Environment": "Production"
+           }
+         }
+       }
+     ]
+   }
+   ```
+   - Name the policy "DeveloperPolicy"
+   - Add tags and create the policy
+
+3. **Implement Permission Boundaries**
+   - Navigate to IAM > Policies > Create policy
+   - Create a permission boundary that will limit what developers can do, even if they're assigned other policies:
+   ```json
+   {
+     "Version": "2012-10-17",
+     "Statement": [
+       {
+         "Sid": "AllowDevelopmentServices",
+         "Effect": "Allow",
+         "Action": [
+           "ec2:*",
+           "rds:*",
+           "s3:*",
+           "dynamodb:*",
+           "lambda:*",
+           "cloudformation:*",
+           "cloudwatch:*",
+           "logs:*"
+         ],
+         "Resource": "*"
+       },
+       {
+         "Sid": "DenyIAMAndOrgManagement",
+         "Effect": "Deny",
+         "Action": [
+           "iam:*Role*",
+           "iam:*Policy*",
+           "organizations:*",
+           "account:*"
+         ],
+         "Resource": "*"
+       },
+       {
+         "Sid": "DenyBillingAccess",
+         "Effect": "Deny",
+         "Action": [
+           "aws-portal:*Billing",
+           "pricing:*",
+           "budgets:*",
+           "cur:*"
+         ],
+         "Resource": "*"
+       }
+     ]
+   }
+   ```
+   - Name the policy "DeveloperPermissionBoundary"
+   - Add tags and create the policy
+
+4. **Create Users and Apply Policies**
+   - Create a security auditor user:
+     - IAM > Users > Add users
+     - Name: "security-auditor"
+     - Console access: Yes
+     - Attach the SecurityAuditorPolicy
+   - Create a developer user:
+     - Name: "developer"
+     - Console access: Yes
+     - Attach the DeveloperPolicy
+     - Set the permission boundary to DeveloperPermissionBoundary
+
+5. **Test Access Levels**
+   - Sign in as the security auditor user
+   - Verify you can view IAM configurations but cannot make changes
+   - Sign in as the developer user
+   - Verify you can create resources with the "Development" tag
+   - Verify you cannot create resources with the "Production" tag
+   - Attempt to create an IAM policy (should be denied)
+
+### Task 2: Configure Cross-Account Access
+
+In this task, you'll set up secure cross-account access patterns using IAM roles.
+
+1. **Create a Secondary AWS Account**
+   - If this is a classroom environment, your instructor may provide a secondary account
+   - Otherwise, create a new AWS account following the same steps as in Lab 1
+   - Note the 12-digit AWS account ID of the secondary account
+
+2. **Create a Cross-Account Role in the Secondary Account**
+   - In the secondary account, navigate to IAM > Roles > Create role
+   - Select "Another AWS account"
+   - Enter the account ID of your primary account
+   - Optionally require MFA for assuming the role (recommended for production)
+   - Attach the "ReadOnlyAccess" policy
+   - Name the role "CrossAccountReadOnly"
+   - Add a description and create the role
+
+3. **Create a Policy in the Primary Account to Assume the Role**
+   - In your primary account, navigate to IAM > Policies > Create policy
+   - Use the JSON editor to create a policy that allows assuming the role:
+   ```json
+   {
+     "Version": "2012-10-17",
+     "Statement": [
+       {
+         "Effect": "Allow",
+         "Action": "sts:AssumeRole",
+         "Resource": "arn:aws:iam::<SECONDARY_ACCOUNT_ID>:role/CrossAccountReadOnly"
+       }
+     ]
+   }
+   ```
+   - Replace `<SECONDARY_ACCOUNT_ID>` with the actual account ID
+   - Name the policy "AssumeSecondaryAccountRole"
+   - Create the policy and attach it to your administrator user
+
+4. **Test Cross-Account Access**
+   - In your primary account, navigate to the account dropdown in the top-right corner
+   - Select "Switch Role"
+   - Enter the secondary account ID and role name "CrossAccountReadOnly"
+   - Click "Switch Role"
+   - Verify you have read-only access to the secondary account
+   - Try to create a resource (should be denied)
+
+### Task 3: Set Up AWS Identity Center (formerly AWS SSO)
+
+In this task, you'll configure AWS Identity Center for centralized identity federation.
+
+1. **Enable AWS Identity Center**
+   - Navigate to the AWS Identity Center console
+   - Click "Enable AWS Identity Center"
+   - It will create a service-linked role automatically
+   - Choose the "organization" option if prompted
+
+2. **Set Up Your Identity Source**
+   - For this lab, we'll use the built-in directory
+   - In a real environment, you might connect to Active Directory, Okta, etc.
+   - Navigate to "Settings" > "Identity source" 
+   - Confirm "Identity Center directory" is selected
+
+3. **Create User Groups**
+   - Navigate to "Groups" > "Create group"
+   - Create the following groups:
+     - Administrators
+     - Developers
+     - Auditors
+   - Create each group with a description
+
+4. **Create Users**
+   - Navigate to "Users" > "Add user"
+   - Create a user for yourself with your email
+   - Create additional test users for each role
+   - Add users to their respective groups
+
+5. **Create Permission Sets**
+   - Navigate to "Permission sets" > "Create permission set"
+   - Create the following permission sets:
+     - **Administrator**: Use the AWS managed "AdministratorAccess" policy
+     - **Developer**: Create a custom permission set based on your DeveloperPolicy
+     - **Auditor**: Create a custom permission set based on your SecurityAuditorPolicy
+
+6. **Assign Access to AWS Accounts**
+   - Navigate to "AWS accounts"
+   - Select your AWS account(s)
+   - Choose "Assign users or groups"
+   - Assign:
+     - Administrators group to the Administrator permission set
+     - Developers group to the Developer permission set
+     - Auditors group to the Auditor permission set
+   - Complete the assignment wizard
+
+7. **Access the AWS Access Portal**
+   - Copy the AWS access portal URL (typically `https://<your-domain>.awsapps.com/start`)
+   - Log out of your current AWS session
+   - Navigate to the access portal URL
+   - Sign in with one of your Identity Center users
+   - You should see the accounts and roles you have access to
+   - Test access by signing in to different roles
+
+### Task 4: Monitor and Audit with CloudTrail
+
+In this task, you'll configure CloudTrail to monitor and audit identity-related activities.
+
+1. **Create a Trail**
+   - Navigate to CloudTrail > Trails > Create trail
+   - Name: "security-audit-trail"
+   - Apply to all regions: Yes
+   - Storage location: Create a new S3 bucket
+   - Log file validation: Enabled
+   - KMS encryption: Enabled (create a new KMS key)
+   - Create the trail
+
+2. **Configure CloudTrail Insights**
+   - Edit your trail
+   - Enable Insights for management events
+   - This helps detect unusual activity patterns
+   - Save your changes
+
+3. **Create CloudWatch Alerts for Security Events**
+   - Navigate to CloudWatch > Log groups
+   - Find your CloudTrail log group
+   - Create a metric filter for:
+     - Root account usage
+     - IAM policy changes
+     - Console login failures
+     - Network ACL changes
+     - Security group changes
+   - Create alarms based on these metrics
+
+4. **Test and Review CloudTrail Logs**
+   - Perform several actions across accounts:
+     - Create and delete users/roles
+     - Modify policies
+     - Assume roles across accounts
+   - Navigate to CloudTrail > Event history
+   - Search for your activities
+   - Analyze who did what, when, and from where
+
+## Understanding the Threat Model
+
+After completing the hands-on tasks, you should understand how the security controls you've implemented address specific threat vectors:
+
+1. **Identity Theft Protection**:
+   - MFA enforcement
+   - Limited scope permissions
+   - CloudTrail alerts for suspicious activity
+
+2. **Misconfiguration Prevention**:
+   - Permission boundaries
+   - Deny statements for high-risk actions
+   - IAM Access Analyzer to identify unintended access
+
+3. **Insecure API Protection**:
+   - Policy conditions to restrict API calls
+   - CloudTrail monitoring of API activity
+   - Service control policies to enforce guardrails
+
+4. **Monitoring Improvements**:
+   - CloudTrail with multi-region coverage
+   - CloudWatch alerts for security events
+   - Centralized identity management in AWS Identity Center
+
+5. **Overprivileged Access Remediation**:
+   - Principle of least privilege in policies
+   - Time-limited role sessions
+   - Resource-based conditions
+
+## Submission Requirements
+
+Submit the following items through the course submission portal:
+
+1. **Screenshots documenting the completion of each task:**
+   - Custom IAM policy creation and application
+   - Cross-account role access
+   - AWS Identity Center setup and user assignment
+   - CloudTrail configuration and captured events
+
+2. **Security Assessment Report (1-2 pages):**
+   - Identify three potential security risks in the lab environment
+   - Explain how each risk relates to the shared responsibility model
+   - Propose additional controls to mitigate each risk
+   - Explain how you've applied the principle of least privilege
+
+3. **Authentication Comparison (1 paragraph):**
+   - Compare traditional IAM user authentication with federation through AWS Identity Center
+   - Explain the security benefits and operational advantages
+   - Identify scenarios where each approach is most appropriate
+
+## Optional Challenge: Implement Automated IAM Remediation
+
+This section explores how to automatically respond to IAM security issues using AWS Lambda.
+
+1. **Create a Lambda Function to Respond to Security Events**
+   - Navigate to Lambda > Create function
+   - Name the function "SecurityRemediationFunction"
+   - Use Python for the runtime
+   - Create a new execution role with permissions for IAM, CloudWatch, and SNS
+   - Create the function with the following code:
+
+```python
+import boto3
+import json
+import os
+
+def lambda_handler(event, context):
+    # Parse the CloudWatch event
+    print("Event received: " + json.dumps(event))
+    
+    # Get the details of the event
+    detail = event.get('detail', {})
+    event_name = detail.get('eventName', '')
+    user_identity = detail.get('userIdentity', {})
+    user_name = user_identity.get('userName', 'unknown')
+    source_ip = detail.get('sourceIPAddress', 'unknown')
+    
+    # Initialize AWS clients
+    iam = boto3.client('iam')
+    sns = boto3.client('sns')
+    
+    # Handle different security events
+    if event_name == 'ConsoleLogin' and detail.get('responseElements', {}).get('ConsoleLogin') == 'Failure':
+        # Handle failed console logins
+        alert_message = f"Multiple failed login attempts detected for user {user_name} from IP {source_ip}"
+        
+        # Send an alert
+        send_alert(sns, alert_message)
+        
+    elif event_name in ['CreateAccessKey', 'CreateUser', 'CreatePolicy', 'PutUserPolicy']:
+        # Check if action was performed by an unauthorized user
+        allowed_admin_users = ['admin', 'security-admin']  # Customize as needed
+        
+        if user_name not in allowed_admin_users and not user_name.startswith('AIDA'):
+            # Unauthorized IAM change detected
+            alert_message = f"Unauthorized IAM change: {event_name} by {user_name} from {source_ip}"
+            
+            # Send an alert
+            send_alert(sns, alert_message)
+            
+            # Depending on your security posture, you could take automated remediation
+            # actions here, such as:
+            # - Revoking access keys
+            # - Applying restrictive permission boundaries
+            # - Disabling IAM users
+            
+            # Example: If someone created an access key that shouldn't have:
+            if event_name == 'CreateAccessKey':
+                access_key_id = detail.get('responseElements', {}).get('accessKey', {}).get('accessKeyId')
+                if access_key_id:
+                    try:
+                        # Deactivate the suspicious access key
+                        iam.update_access_key(
+                            UserName=user_name,
+                            AccessKeyId=access_key_id,
+                            Status='Inactive'
+                        )
+                        
+                        remediation_message = f"Automatically deactivated suspicious access key {access_key_id} created by {user_name}"
+                        send_alert(sns, remediation_message)
+                    except Exception as e:
+                        send_alert(sns, f"Error remediating access key: {str(e)}")
+    
+    return {
+        'statusCode': 200,
+        'body': json.dumps('Function executed successfully!')
+    }
+
+def send_alert(sns, message):
+    # Send alert to SNS topic
+    sns_topic_arn = os.environ.get('SNS_TOPIC_ARN')
+    if sns_topic_arn:
+        sns.publish(
+            TopicArn=sns_topic_arn,
+            Subject="AWS Security Alert",
+            Message=message
+        )
+    else:
+        print("No SNS topic configured. Alert message: " + message)
+```
+
+2. **Create an SNS Topic for Alerts**
+   - Navigate to SNS > Topics > Create topic
+   - Topic type: Standard
+   - Name: "SecurityAlerts"
+   - Create the topic
+   - Create a subscription with your email
+   - Add the SNS topic ARN as an environment variable in the Lambda function
+
+3. **Create a CloudWatch Events Rule**
+   - Navigate to CloudWatch > Events > Rules > Create rule
+   - Event source: Event pattern
+   - Service name: IAM
+   - Event type: AWS API Call via CloudTrail
+   - Specific operations: ConsoleLogin, CreateAccessKey, CreateUser, CreatePolicy, PutUserPolicy
+   - Target: Lambda function "SecurityRemediationFunction"
+   - Create the rule
+
+4. **Test the Automated Remediation**
+   - Perform an action that should trigger the function, such as:
+     - Create a new access key for a user
+     - Make multiple failed login attempts
+   - Check your email for alerts
+   - Check CloudWatch Logs for the Lambda function's execution
+
+## Resources
+
+- [AWS Identity and Access Management Documentation](https://docs.aws.amazon.com/IAM/latest/UserGuide/introduction.html)
+- [AWS Security Best Practices](https://aws.amazon.com/whitepapers/aws-security-best-practices/)
+- [AWS Shared Responsibility Model](https://aws.amazon.com/compliance/shared-responsibility-model/)
+- [AWS Identity Center Documentation](https://docs.aws.amazon.com/singlesignon/latest/userguide/what-is.html)
+- [AWS CloudTrail Documentation](https://docs.aws.amazon.com/awscloudtrail/latest/userguide/cloudtrail-user-guide.html)
+- [Cloud Security Alliance Top Threats](https://cloudsecurityalliance.org/research/top-threats/) 
