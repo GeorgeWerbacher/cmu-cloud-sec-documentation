@@ -427,37 +427,27 @@ After completing the hands-on tasks, you should understand how the security cont
    - Time-limited role sessions
    - Resource-based conditions
 
-## Submission Requirements
-
-Submit the following items through the course submission portal:
-
-1. **Screenshots documenting the completion of each task:**
-   - Custom IAM policy creation and application
-   - Cross-account role access
-   - AWS Identity Center setup and user assignment
-   - CloudTrail configuration and captured events
-
-2. **Security Assessment Report (1-2 pages):**
-   - Identify three potential security risks in the lab environment
-   - Explain how each risk relates to the shared responsibility model
-   - Propose additional controls to mitigate each risk
-   - Explain how you've applied the principle of least privilege
-
-3. **Authentication Comparison (1 paragraph):**
-   - Compare traditional IAM user authentication with federation through AWS Identity Center
-   - Explain the security benefits and operational advantages
-   - Identify scenarios where each approach is most appropriate
-
 ## Optional Challenge: Implement Automated IAM Remediation
 
 This section explores how to automatically respond to IAM security issues using AWS Lambda.
 
-1. **Create a Lambda Function to Respond to Security Events**
-   - Navigate to Lambda > Create function
-   - Name the function "SecurityRemediationFunction"
-   - Use Python for the runtime
-   - Create a new execution role with permissions for IAM, CloudWatch, and SNS
-   - Create the function with the following code:
+### Prerequisites for Lambda Section
+
+- AWS CLI configured with appropriate permissions
+- Basic understanding of Python
+- Familiarity with AWS Lambda and CloudWatch Events
+
+### Setting Up the Lambda Function
+
+1. **Create the Lambda Function**
+   - Navigate to Lambda > Functions > Create function
+   - Name: "SecurityRemediationFunction"
+   - Runtime: Python 3.9
+   - Architecture: x86_64
+   - Create function
+
+2. **Add the Function Code**
+   - Copy the following code into the Lambda editor:
 
 ```python
 import boto3
@@ -539,7 +529,7 @@ def send_alert(sns, message):
         print("No SNS topic configured. Alert message: " + message)
 ```
 
-2. **Create an SNS Topic for Alerts**
+3. **Create an SNS Topic for Alerts**
    - Navigate to SNS > Topics > Create topic
    - Topic type: Standard
    - Name: "SecurityAlerts"
@@ -547,7 +537,7 @@ def send_alert(sns, message):
    - Create a subscription with your email
    - Add the SNS topic ARN as an environment variable in the Lambda function
 
-3. **Create a CloudWatch Events Rule**
+4. **Create a CloudWatch Events Rule**
    - Navigate to CloudWatch > Events > Rules > Create rule
    - Event source: Event pattern
    - Service name: IAM
@@ -556,12 +546,329 @@ def send_alert(sns, message):
    - Target: Lambda function "SecurityRemediationFunction"
    - Create the rule
 
-4. **Test the Automated Remediation**
+5. **Test the Automated Remediation**
    - Perform an action that should trigger the function, such as:
      - Create a new access key for a user
      - Make multiple failed login attempts
    - Check your email for alerts
    - Check CloudWatch Logs for the Lambda function's execution
+
+## Infrastructure as Code with Terraform
+
+In this section, you'll learn how to implement the same IAM and federation configurations using Terraform, an industry-standard Infrastructure as Code (IaC) tool. This approach allows you to version control your infrastructure and maintain consistency across environments.
+
+### Prerequisites for Terraform
+
+1. Install Terraform (version 1.0.0 or later)
+2. Configure AWS credentials (either through AWS CLI or environment variables)
+3. Basic understanding of HCL (HashiCorp Configuration Language)
+
+### Project Setup
+
+1. Create a new directory for your Terraform project:
+   ```bash
+   mkdir lab2-terraform
+   cd lab2-terraform
+   ```
+
+2. Create the following file structure:
+   ```
+   lab2-terraform/
+   ├── main.tf
+   ├── variables.tf
+   ├── outputs.tf
+   ├── terraform.tfvars
+   └── README.md
+   ```
+
+### Implementation Steps
+
+1. First, create `variables.tf` to define your input variables:
+   ```hcl
+   variable "aws_region" {
+     description = "AWS region to deploy resources"
+     type        = string
+     default     = "us-east-1"
+   }
+
+   variable "environment" {
+     description = "Environment name (e.g., dev, prod)"
+     type        = string
+     default     = "dev"
+   }
+
+   variable "security_auditor_username" {
+     description = "Username for the security auditor"
+     type        = string
+   }
+
+   variable "developer_username" {
+     description = "Username for the developer"
+     type        = string
+   }
+
+   variable "tags" {
+     description = "Tags to apply to all resources"
+     type        = map(string)
+     default = {
+       Project     = "CloudSecurityLab"
+       Environment = "Development"
+       Terraform   = "true"
+     }
+   }
+   ```
+
+2. Create `main.tf` with the provider configuration and resource definitions:
+   ```hcl
+   terraform {
+     required_providers {
+       aws = {
+         source  = "hashicorp/aws"
+         version = "~> 4.0"
+       }
+     }
+   }
+
+   provider "aws" {
+     region = var.aws_region
+   }
+
+   # Security Auditor Policy
+   resource "aws_iam_policy" "security_auditor_policy" {
+     name        = "SecurityAuditorPolicy"
+     description = "Policy for security auditors with read-only access"
+
+     policy = jsonencode({
+       Version = "2012-10-17"
+       Statement = [
+         {
+           Sid    = "AllowSecurityAudit"
+           Effect = "Allow"
+           Action = [
+             "cloudtrail:LookupEvents",
+             "cloudtrail:GetTrail",
+             "cloudtrail:ListTrails",
+             "cloudwatch:DescribeAlarms",
+             "config:Get*",
+             "config:Describe*",
+             "config:List*",
+             "iam:GenerateCredentialReport",
+             "iam:GenerateServiceLastAccessedDetails",
+             "iam:Get*",
+             "iam:List*",
+             "kms:ListKeys",
+             "kms:ListAliases",
+             "s3:GetBucketPolicy",
+             "s3:GetBucketLogging",
+             "s3:ListAllMyBuckets"
+           ]
+           Resource = "*"
+         },
+         {
+           Sid    = "DenyWriteAccess"
+           Effect = "Deny"
+           Action = [
+             "iam:Add*",
+             "iam:Attach*",
+             "iam:Create*",
+             "iam:Delete*",
+             "iam:Detach*",
+             "iam:Put*",
+             "iam:Update*",
+             "s3:Put*",
+             "s3:Delete*",
+             "kms:Create*",
+             "kms:Disable*",
+             "kms:Delete*",
+             "kms:Update*"
+           ]
+           Resource = "*"
+         }
+       ]
+     })
+
+     tags = var.tags
+   }
+
+   # Developer Policy
+   resource "aws_iam_policy" "developer_policy" {
+     name        = "DeveloperPolicy"
+     description = "Policy for developers with environment-specific access"
+
+     policy = jsonencode({
+       Version = "2012-10-17"
+       Statement = [
+         {
+           Sid    = "AllowDevelopmentAccess"
+           Effect = "Allow"
+           Action = [
+             "ec2:*",
+             "rds:*",
+             "s3:*",
+             "dynamodb:*",
+             "lambda:*",
+             "cloudformation:*"
+           ]
+           Resource = [
+             "arn:aws:ec2:*:*:instance/*",
+             "arn:aws:rds:*:*:db:${var.environment}-*",
+             "arn:aws:s3:::${var.environment}-*",
+             "arn:aws:dynamodb:*:*:table/${var.environment}-*",
+             "arn:aws:lambda:*:*:function:${var.environment}-*",
+             "arn:aws:cloudformation:*:*:stack/${var.environment}-*"
+           ]
+           Condition = {
+             StringEquals = {
+               "aws:ResourceTag/Environment" = var.environment
+             }
+           }
+         }
+       ]
+     })
+
+     tags = var.tags
+   }
+
+   # Developer Permission Boundary
+   resource "aws_iam_policy" "developer_permission_boundary" {
+     name        = "DeveloperPermissionBoundary"
+     description = "Permission boundary for developer roles"
+
+     policy = jsonencode({
+       Version = "2012-10-17"
+       Statement = [
+         {
+           Sid    = "AllowDevelopmentServices"
+           Effect = "Allow"
+           Action = [
+             "ec2:*",
+             "rds:*",
+             "s3:*",
+             "dynamodb:*",
+             "lambda:*",
+             "cloudformation:*",
+             "cloudwatch:*",
+             "logs:*"
+           ]
+           Resource = "*"
+         },
+         {
+           Sid    = "DenyIAMAndOrgManagement"
+           Effect = "Deny"
+           Action = [
+             "iam:*Role*",
+             "iam:*Policy*",
+             "organizations:*",
+             "account:*"
+           ]
+           Resource = "*"
+         }
+       ]
+     })
+
+     tags = var.tags
+   }
+
+   # Security Auditor User
+   resource "aws_iam_user" "security_auditor" {
+     name = var.security_auditor_username
+     tags = var.tags
+   }
+
+   resource "aws_iam_user_policy_attachment" "security_auditor_policy_attachment" {
+     user       = aws_iam_user.security_auditor.name
+     policy_arn = aws_iam_policy.security_auditor_policy.arn
+   }
+
+   # Developer User
+   resource "aws_iam_user" "developer" {
+     name = var.developer_username
+     tags = var.tags
+   }
+
+   resource "aws_iam_user_policy_attachment" "developer_policy_attachment" {
+     user       = aws_iam_user.developer.name
+     policy_arn = aws_iam_policy.developer_policy.arn
+   }
+   ```
+
+3. Create `outputs.tf` to define useful outputs:
+   ```hcl
+   output "security_auditor_arn" {
+     description = "ARN of the security auditor user"
+     value       = aws_iam_user.security_auditor.arn
+   }
+
+   output "developer_arn" {
+     description = "ARN of the developer user"
+     value       = aws_iam_user.developer.arn
+   }
+
+   output "security_auditor_policy_arn" {
+     description = "ARN of the security auditor policy"
+     value       = aws_iam_policy.security_auditor_policy.arn
+   }
+
+   output "developer_policy_arn" {
+     description = "ARN of the developer policy"
+     value       = aws_iam_policy.developer_policy.arn
+   }
+   ```
+
+4. Create `terraform.tfvars` with your specific values:
+   ```hcl
+   aws_region            = "us-east-1"
+   environment           = "dev"
+   security_auditor_username = "security-auditor"
+   developer_username    = "developer"
+   tags = {
+     Project     = "CloudSecurityLab"
+     Environment = "Development"
+     Terraform   = "true"
+     Owner       = "YourName"
+   }
+   ```
+
+### Deploying the Infrastructure
+
+1. Initialize Terraform:
+   ```bash
+   terraform init
+   ```
+
+2. Review the planned changes:
+   ```bash
+   terraform plan
+   ```
+
+3. Apply the changes:
+   ```bash
+   terraform apply
+   ```
+
+4. When you're done, destroy the resources:
+   ```bash
+   terraform destroy
+   ```
+
+### Best Practices Demonstrated
+
+1. **Variable Usage**: Using variables for configurable values
+2. **Resource Tagging**: Consistent tagging across all resources
+3. **Modular Design**: Separating concerns into different files
+4. **Output Values**: Providing useful information after deployment
+5. **Policy Structure**: Implementing least privilege access
+6. **Conditional Access**: Using conditions to restrict access based on environment
+
+### Additional Challenges
+
+1. Add MFA requirement for the IAM users
+2. Implement password policies
+3. Add more granular resource access controls
+4. Create additional IAM roles for specific services
+5. Implement cross-account access patterns
+
+Remember to always review the `terraform plan` output before applying changes, and use version control to track your infrastructure changes.
 
 ## Resources
 
