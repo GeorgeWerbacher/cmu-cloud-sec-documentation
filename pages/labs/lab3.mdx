@@ -1,0 +1,917 @@
+---
+title: 'Lab 3: Secure AWS Networking'
+description: 'Design and implement secure network architecture in AWS'
+---
+
+# Lab 3: Secure AWS Networking
+
+## Overview
+
+Building on the foundation established in Labs 1 and 2, this lab focuses on secure networking in AWS. You'll design and implement a multi-tier VPC architecture with appropriate security controls, configure network access restrictions, and monitor network traffic. Understanding secure networking is essential for protecting cloud resources and maintaining compliance with security standards.
+
+## Prerequisites
+
+- Completion of Lab 1: AWS Account Fundamentals
+- Completion of Lab 2: Advanced IAM & Federation
+- An AWS account with administrator access
+- AWS CLI installed and configured
+- Basic understanding of networking concepts (IP addressing, subnets, routing)
+- Web browser and internet connection
+
+## Learning Objectives
+
+By the end of this lab, you'll be able to:
+
+1. Design and implement a secure multi-tier VPC architecture
+2. Configure and manage Security Groups and Network ACLs
+3. Implement VPC flow logs to monitor network traffic
+4. Set up secure cross-VPC connectivity using peering
+5. Establish a bastion host architecture for secure remote access
+6. Implement private subnets with secure internet access using NAT Gateways
+7. Create and manage AWS PrivateLink and VPC Endpoints
+8. Use AWS Transit Gateway for a scalable network architecture
+9. Apply the defense-in-depth principle to network security
+
+## Network Security in AWS
+
+Before diving into hands-on exercises, it's important to understand the key network security components in AWS:
+
+- **Virtual Private Cloud (VPC)**: Isolated virtual network dedicated to your AWS account
+- **Subnets**: Segments of a VPC's IP address range where resources are placed
+- **Security Groups**: Virtual firewalls that control inbound and outbound traffic at the instance level
+- **Network Access Control Lists (NACLs)**: Stateless firewalls that control traffic at the subnet level
+- **Internet Gateway**: Enables communication between resources in a VPC and the internet
+- **NAT Gateway**: Allows resources in private subnets to access the internet while remaining private
+- **VPC Flow Logs**: Capture network traffic information for monitoring and analysis
+- **VPC Endpoints**: Enable private connectivity to AWS services without traversing the public internet
+- **Transit Gateway**: Central hub that connects VPCs, VPNs, and Direct Connect networks
+
+## Reference Architecture
+
+Throughout this lab, we'll build the following reference architecture:
+
+```
+                             │
+                             ▼
+                      ┌─────────────┐
+                      │    Public   │
+                      │   Internet  │
+                      └──────┬──────┘
+                             │
+                             ▼
+                      ┌─────────────┐
+                      │   Internet  │
+                      │   Gateway   │
+                      └──────┬──────┘
+                             │
+             ┌───────────────┴───────────────┐
+             ▼                               ▼
+    ┌──────────────┐                ┌──────────────┐
+    │Public Subnet │                │Public Subnet │
+    │   (Web Tier) │                │  (Bastion)   │
+    │   10.0.1.0/24│                │ 10.0.2.0/24  │
+    └───────┬──────┘                └───────┬──────┘
+            │                                │
+            │                                │
+            ▼                                │
+    ┌──────────────┐                         │
+    │ NAT Gateway  │                         │
+    └───────┬──────┘                         │
+            │                                │
+            ▼                                ▼
+    ┌──────────────┐                ┌──────────────┐
+    │Private Subnet│                │Private Subnet│
+    │  (App Tier)  │                │  (Data Tier) │
+    │ 10.0.3.0/24  │                │ 10.0.4.0/24  │
+    └──────────────┘                └──────────────┘
+```
+
+This architecture implements:
+- **Defense in Depth**: Multiple security layers protect resources
+- **Least Privilege**: Resources have minimal network access required
+- **Segmentation**: Different application tiers are isolated in separate subnets
+- **Secure Access**: Jump boxes (bastions) for secure administrative access
+
+## Detailed Instructions
+
+### Task 1: Create a Secure VPC Architecture
+
+1. **Design and Create a VPC**
+   - Sign in to AWS Management Console
+   - Navigate to VPC Dashboard
+   - Click "Create VPC"
+   - Select "VPC and more" to use the VPC wizard
+   - Configure the VPC:
+     - Name tag: `SecureVPC`
+     - IPv4 CIDR block: `10.0.0.0/16`
+   - Configure subnets:
+     - Public subnet 1: `10.0.1.0/24` (Web Tier) in Availability Zone a
+     - Public subnet 2: `10.0.2.0/24` (Bastion) in Availability Zone b
+     - Private subnet 1: `10.0.3.0/24` (App Tier) in Availability Zone a
+     - Private subnet 2: `10.0.4.0/24` (Data Tier) in Availability Zone b
+   - Enable DNS hostnames and DNS resolution
+   - Configure NAT gateway in one of the public subnets
+   - Create an internet gateway
+   - Create the VPC
+
+2. **Configure Route Tables**
+   - Navigate to Route Tables in the VPC Dashboard
+   - Identify the main route table created with the VPC
+   - Create a public route table:
+     - Name: `Public-RT`
+     - Add a route to the internet gateway (`0.0.0.0/0` → Internet Gateway)
+     - Associate it with both public subnets
+   - Create a private route table:
+     - Name: `Private-RT`
+     - Add a route to the NAT gateway (`0.0.0.0/0` → NAT Gateway)
+     - Associate it with both private subnets
+
+3. **Implement Network ACLs**
+   - Navigate to Network ACLs in the VPC Dashboard
+   - Create a NACL for public subnets:
+     - Name: `Public-NACL`
+     - Associate with public subnets
+     - Inbound rules:
+       - Rule #100: Allow HTTP (port 80) from `0.0.0.0/0`
+       - Rule #110: Allow HTTPS (port 443) from `0.0.0.0/0`
+       - Rule #120: Allow SSH (port 22) from your IP address only
+       - Rule #130: Allow return traffic (ephemeral ports 1024-65535) from `0.0.0.0/0`
+     - Outbound rules:
+       - Rule #100: Allow all traffic to `0.0.0.0/0`
+   - Create a NACL for private subnets:
+     - Name: `Private-NACL`
+     - Associate with private subnets
+     - Inbound rules:
+       - Rule #100: Allow traffic from the VPC CIDR (`10.0.0.0/16`)
+       - Rule #110: Allow return traffic (ephemeral ports 1024-65535) from `0.0.0.0/0`
+     - Outbound rules:
+       - Rule #100: Allow all traffic to `0.0.0.0/0`
+
+### Task 2: Implement Security Groups
+
+1. **Create a Bastion Host Security Group**
+   - Navigate to Security Groups in the VPC Dashboard
+   - Click "Create security group"
+   - Name: `Bastion-SG`
+   - Description: "Security group for bastion hosts"
+   - VPC: Select your VPC
+   - Inbound rules:
+     - Allow SSH (port 22) from your IP address only
+   - Outbound rules:
+     - Allow all traffic
+
+2. **Create a Web Tier Security Group**
+   - Name: `WebTier-SG`
+   - Description: "Security group for web servers"
+   - VPC: Select your VPC
+   - Inbound rules:
+     - Allow HTTP (port 80) from `0.0.0.0/0`
+     - Allow HTTPS (port 443) from `0.0.0.0/0`
+     - Allow SSH (port 22) from Bastion-SG
+   - Outbound rules:
+     - Allow all traffic
+
+3. **Create an App Tier Security Group**
+   - Name: `AppTier-SG`
+   - Description: "Security group for application servers"
+   - VPC: Select your VPC
+   - Inbound rules:
+     - Allow custom application port (e.g., 8080) from WebTier-SG
+     - Allow SSH (port 22) from Bastion-SG
+   - Outbound rules:
+     - Allow all traffic
+
+4. **Create a Data Tier Security Group**
+   - Name: `DataTier-SG`
+   - Description: "Security group for database servers"
+   - VPC: Select your VPC
+   - Inbound rules:
+     - Allow database port (e.g., 3306 for MySQL) from AppTier-SG
+     - Allow SSH (port 22) from Bastion-SG
+   - Outbound rules:
+     - Allow all traffic
+
+### Task 3: Deploy EC2 Instances in the Architecture
+
+1. **Launch a Bastion Host**
+   - Navigate to EC2 Dashboard
+   - Click "Launch Instances"
+   - Name: `Bastion-Host`
+   - Select Amazon Linux 2 AMI
+   - Choose t2.micro instance type (free tier eligible)
+   - Key pair: Create or select an existing key pair
+   - Network settings:
+     - VPC: Select your VPC
+     - Subnet: Select Public Subnet 2 (Bastion)
+     - Auto-assign public IP: Enable
+     - Security group: Select Bastion-SG
+   - Launch the instance
+
+2. **Launch a Web Server**
+   - Name: `Web-Server`
+   - Select Amazon Linux 2 AMI
+   - Choose t2.micro instance type
+   - Key pair: Same as bastion host
+   - Network settings:
+     - VPC: Select your VPC
+     - Subnet: Select Public Subnet 1 (Web Tier)
+     - Auto-assign public IP: Enable
+     - Security group: Select WebTier-SG
+   - User data (to install a web server):
+   ```bash
+   #!/bin/bash
+   yum update -y
+   yum install httpd -y
+   systemctl start httpd
+   systemctl enable httpd
+   echo "<h1>Secure Web Server in AWS</h1>" > /var/www/html/index.html
+   ```
+   - Launch the instance
+
+3. **Launch an Application Server**
+   - Name: `App-Server`
+   - Select Amazon Linux 2 AMI
+   - Choose t2.micro instance type
+   - Key pair: Same as bastion host
+   - Network settings:
+     - VPC: Select your VPC
+     - Subnet: Select Private Subnet 1 (App Tier)
+     - Auto-assign public IP: Disable
+     - Security group: Select AppTier-SG
+   - Launch the instance
+
+4. **Launch a Database Server**
+   - Name: `DB-Server`
+   - Select Amazon Linux 2 AMI
+   - Choose t2.micro instance type
+   - Key pair: Same as bastion host
+   - Network settings:
+     - VPC: Select your VPC
+     - Subnet: Select Private Subnet 2 (Data Tier)
+     - Auto-assign public IP: Disable
+     - Security group: Select DataTier-SG
+   - User data (to install MySQL):
+   ```bash
+   #!/bin/bash
+   yum update -y
+   yum install mariadb-server -y
+   systemctl start mariadb
+   systemctl enable mariadb
+   ```
+   - Launch the instance
+
+### Task 4: Configure VPC Flow Logs
+
+1. **Create a CloudWatch Log Group**
+   - Navigate to CloudWatch Dashboard
+   - Select "Log groups" in the left navigation pane
+   - Click "Create log group"
+   - Name: `VPC-Flow-Logs`
+   - Click "Create"
+
+2. **Enable VPC Flow Logs**
+   - Navigate to VPC Dashboard
+   - Select your VPC
+   - Click the "Flow logs" tab
+   - Click "Create flow log"
+   - Configure the flow log:
+     - Filter: "All"
+     - Maximum aggregation interval: "1 minute"
+     - Destination: "Send to CloudWatch Logs"
+     - Destination log group: Select `VPC-Flow-Logs`
+     - IAM role: Create a new role (or use an existing role with appropriate permissions)
+   - Create flow log
+
+3. **Analyze Flow Logs**
+   - Navigate to CloudWatch Dashboard
+   - Select "Log groups" in the left navigation pane
+   - Select the `VPC-Flow-Logs` log group
+   - Generate some traffic in your VPC by:
+     - Accessing the web server via its public IP
+     - Connecting to the bastion host via SSH
+   - Explore the flow logs to see the captured traffic
+   - Create a filter to identify rejected traffic:
+     - Filter pattern: `[version, account, eni, source, destination, srcport, destport, protocol, packets, bytes, windowstart, windowend, action="REJECT", flowlogstatus]`
+
+### Task 5: Implement VPC Endpoints
+
+1. **Create an S3 Gateway Endpoint**
+   - Navigate to VPC Dashboard
+   - Select "Endpoints" in the left navigation pane
+   - Click "Create endpoint"
+   - Configure the endpoint:
+     - Service category: "AWS services"
+     - Service name: Search for "S3" and select the S3 Gateway endpoint
+     - VPC: Select your VPC
+     - Route tables: Select both public and private route tables
+   - Create endpoint
+
+2. **Test the S3 Endpoint from a Private Instance**
+   - Connect to your bastion host via SSH
+   - From the bastion, SSH to the App-Server in the private subnet
+   - Run the following command to test S3 access:
+   ```bash
+   aws s3 ls
+   ```
+   - The command should work without internet access due to the VPC endpoint
+
+3. **Create an Interface Endpoint for Systems Manager**
+   - Navigate to VPC Dashboard
+   - Select "Endpoints" in the left navigation pane
+   - Click "Create endpoint"
+   - Configure the endpoint:
+     - Service category: "AWS services"
+     - Service name: Search for "ssm" and select the SSM endpoint
+     - VPC: Select your VPC
+     - Subnets: Select both private subnets
+     - Security group: Create a new security group allowing HTTPS (port 443)
+     - Policy: "Full access"
+   - Create endpoint
+   - Repeat the process for "ssm-messages" and "ec2messages" endpoints
+
+### Task 6: Implement a Second VPC and Peering
+
+1. **Create a Second VPC**
+   - Navigate to VPC Dashboard
+   - Click "Create VPC"
+   - Select "VPC only"
+   - Configure the VPC:
+     - Name tag: `SecondaryVPC`
+     - IPv4 CIDR block: `172.16.0.0/16`
+   - Create VPC
+   - Create a public subnet in this VPC:
+     - Navigate to Subnets
+     - Click "Create subnet"
+     - VPC: Select `SecondaryVPC`
+     - Subnet name: `Secondary-Public`
+     - Availability Zone: Choose any AZ
+     - IPv4 CIDR block: `172.16.1.0/24`
+   - Create subnet
+
+2. **Set Up VPC Peering**
+   - Navigate to "Peering connections" in the VPC Dashboard
+   - Click "Create peering connection"
+   - Configure the peering connection:
+     - Name tag: `Primary-Secondary-Peering`
+     - VPC (Requester): Select your primary VPC (`SecureVPC`)
+     - Account: "My account"
+     - Region: "This region"
+     - VPC (Accepter): Select your secondary VPC (`SecondaryVPC`)
+   - Create peering connection
+   - Navigate back to peering connections
+   - Select the newly created peering connection
+   - Click "Actions" and select "Accept request"
+
+3. **Update Route Tables**
+   - Navigate to Route Tables in the VPC Dashboard
+   - Update the route tables in both VPCs to route traffic to each other:
+     - In the primary VPC's route tables, add a route:
+       - Destination: `172.16.0.0/16` (Secondary VPC CIDR)
+       - Target: Select the peering connection
+     - In the secondary VPC's route table, add a route:
+       - Destination: `10.0.0.0/16` (Primary VPC CIDR)
+       - Target: Select the peering connection
+
+4. **Test Connectivity**
+   - Launch an EC2 instance in the secondary VPC
+   - Configure security groups to allow ICMP (ping) between VPCs
+   - Test connectivity between instances in different VPCs
+
+### Task 7: Implement Transit Gateway (Optional)
+
+1. **Create a Transit Gateway**
+   - Navigate to Transit Gateways in the VPC Dashboard
+   - Click "Create Transit Gateway"
+   - Configure the transit gateway:
+     - Name tag: `Main-TGW`
+     - Description: "Main transit gateway"
+     - Amazon side ASN: Leave as default
+     - DNS support: Enabled
+     - VPN ECMP support: Enabled
+     - Default route table association: Enabled
+     - Default route table propagation: Enabled
+   - Create transit gateway
+
+2. **Create Transit Gateway Attachments**
+   - Navigate to "Transit Gateway Attachments"
+   - Click "Create Transit Gateway Attachment"
+   - Configure the attachment:
+     - Transit gateway ID: Select your transit gateway
+     - Attachment type: "VPC"
+     - VPC ID: Select your primary VPC
+     - Subnet IDs: Select one subnet from each AZ
+   - Create attachment
+   - Repeat for the secondary VPC
+
+3. **Update Route Tables**
+   - In each VPC's route tables, replace the peering connection routes with routes to the transit gateway:
+     - In the primary VPC's route tables:
+       - Destination: `172.16.0.0/16` (Secondary VPC CIDR)
+       - Target: Select the transit gateway
+     - In the secondary VPC's route table:
+       - Destination: `10.0.0.0/16` (Primary VPC CIDR)
+       - Target: Select the transit gateway
+
+## Infrastructure as Code with Terraform
+
+In this section, you'll learn how to implement the same network architecture using Terraform. This approach allows you to version control your infrastructure and maintain consistency across environments.
+
+### Prerequisites for Terraform
+
+1. Install Terraform (version 1.0.0 or later)
+2. Configure AWS credentials (either through AWS CLI or environment variables)
+3. Basic understanding of HCL (HashiCorp Configuration Language)
+
+### Project Setup
+
+1. Create a new directory for your Terraform project:
+   ```bash
+   mkdir lab3-terraform
+   cd lab3-terraform
+   ```
+
+2. Create the following file structure:
+   ```
+   lab3-terraform/
+   ├── main.tf
+   ├── variables.tf
+   ├── outputs.tf
+   ├── terraform.tfvars
+   └── README.md
+   ```
+
+### Implementation Steps
+
+1. First, create `variables.tf` to define your input variables:
+   ```hcl
+   variable "aws_region" {
+     description = "AWS region to deploy resources"
+     type        = string
+     default     = "us-east-1"
+   }
+
+   variable "vpc_cidr" {
+     description = "CIDR block for the VPC"
+     type        = string
+     default     = "10.0.0.0/16"
+   }
+
+   variable "public_subnet_cidrs" {
+     description = "CIDR blocks for the public subnets"
+     type        = list(string)
+     default     = ["10.0.1.0/24", "10.0.2.0/24"]
+   }
+
+   variable "private_subnet_cidrs" {
+     description = "CIDR blocks for the private subnets"
+     type        = list(string)
+     default     = ["10.0.3.0/24", "10.0.4.0/24"]
+   }
+
+   variable "availability_zones" {
+     description = "List of availability zones"
+     type        = list(string)
+     default     = ["us-east-1a", "us-east-1b"]
+   }
+
+   variable "allowed_ssh_cidr" {
+     description = "CIDR block allowed to connect via SSH"
+     type        = string
+     default     = "0.0.0.0/0"  # Should be restricted to your IP in production
+   }
+
+   variable "tags" {
+     description = "Tags to apply to resources"
+     type        = map(string)
+     default = {
+       Project     = "CloudSecurityLab"
+       Environment = "Development"
+       Terraform   = "true"
+     }
+   }
+   ```
+
+2. Create `main.tf` with the provider configuration and resource definitions:
+   ```hcl
+   terraform {
+     required_providers {
+       aws = {
+         source  = "hashicorp/aws"
+         version = "~> 4.0"
+       }
+     }
+   }
+
+   provider "aws" {
+     region = var.aws_region
+   }
+
+   # VPC
+   resource "aws_vpc" "secure_vpc" {
+     cidr_block           = var.vpc_cidr
+     enable_dns_support   = true
+     enable_dns_hostnames = true
+
+     tags = merge(var.tags, {
+       Name = "SecureVPC"
+     })
+   }
+
+   # Internet Gateway
+   resource "aws_internet_gateway" "igw" {
+     vpc_id = aws_vpc.secure_vpc.id
+
+     tags = merge(var.tags, {
+       Name = "SecureVPC-IGW"
+     })
+   }
+
+   # Public Subnets
+   resource "aws_subnet" "public_subnets" {
+     count                   = length(var.public_subnet_cidrs)
+     vpc_id                  = aws_vpc.secure_vpc.id
+     cidr_block              = var.public_subnet_cidrs[count.index]
+     availability_zone       = var.availability_zones[count.index]
+     map_public_ip_on_launch = true
+
+     tags = merge(var.tags, {
+       Name = count.index == 0 ? "WebTier-Public" : "Bastion-Public"
+     })
+   }
+
+   # Private Subnets
+   resource "aws_subnet" "private_subnets" {
+     count                   = length(var.private_subnet_cidrs)
+     vpc_id                  = aws_vpc.secure_vpc.id
+     cidr_block              = var.private_subnet_cidrs[count.index]
+     availability_zone       = var.availability_zones[count.index]
+     map_public_ip_on_launch = false
+
+     tags = merge(var.tags, {
+       Name = count.index == 0 ? "AppTier-Private" : "DataTier-Private"
+     })
+   }
+
+   # Elastic IP for NAT Gateway
+   resource "aws_eip" "nat_eip" {
+     vpc        = true
+     depends_on = [aws_internet_gateway.igw]
+
+     tags = merge(var.tags, {
+       Name = "SecureVPC-NAT-EIP"
+     })
+   }
+
+   # NAT Gateway
+   resource "aws_nat_gateway" "nat_gateway" {
+     allocation_id = aws_eip.nat_eip.id
+     subnet_id     = aws_subnet.public_subnets[0].id
+     depends_on    = [aws_internet_gateway.igw]
+
+     tags = merge(var.tags, {
+       Name = "SecureVPC-NAT"
+     })
+   }
+
+   # Public Route Table
+   resource "aws_route_table" "public_rt" {
+     vpc_id = aws_vpc.secure_vpc.id
+
+     route {
+       cidr_block = "0.0.0.0/0"
+       gateway_id = aws_internet_gateway.igw.id
+     }
+
+     tags = merge(var.tags, {
+       Name = "Public-RT"
+     })
+   }
+
+   # Private Route Table
+   resource "aws_route_table" "private_rt" {
+     vpc_id = aws_vpc.secure_vpc.id
+
+     route {
+       cidr_block     = "0.0.0.0/0"
+       nat_gateway_id = aws_nat_gateway.nat_gateway.id
+     }
+
+     tags = merge(var.tags, {
+       Name = "Private-RT"
+     })
+   }
+
+   # Route Table Associations - Public
+   resource "aws_route_table_association" "public_rta" {
+     count          = length(var.public_subnet_cidrs)
+     subnet_id      = aws_subnet.public_subnets[count.index].id
+     route_table_id = aws_route_table.public_rt.id
+   }
+
+   # Route Table Associations - Private
+   resource "aws_route_table_association" "private_rta" {
+     count          = length(var.private_subnet_cidrs)
+     subnet_id      = aws_subnet.private_subnets[count.index].id
+     route_table_id = aws_route_table.private_rt.id
+   }
+
+   # Security Groups
+   resource "aws_security_group" "bastion_sg" {
+     name        = "Bastion-SG"
+     description = "Security group for bastion hosts"
+     vpc_id      = aws_vpc.secure_vpc.id
+
+     ingress {
+       from_port   = 22
+       to_port     = 22
+       protocol    = "tcp"
+       cidr_blocks = [var.allowed_ssh_cidr]
+     }
+
+     egress {
+       from_port   = 0
+       to_port     = 0
+       protocol    = "-1"
+       cidr_blocks = ["0.0.0.0/0"]
+     }
+
+     tags = merge(var.tags, {
+       Name = "Bastion-SG"
+     })
+   }
+
+   resource "aws_security_group" "web_tier_sg" {
+     name        = "WebTier-SG"
+     description = "Security group for web servers"
+     vpc_id      = aws_vpc.secure_vpc.id
+
+     ingress {
+       from_port   = 80
+       to_port     = 80
+       protocol    = "tcp"
+       cidr_blocks = ["0.0.0.0/0"]
+     }
+
+     ingress {
+       from_port   = 443
+       to_port     = 443
+       protocol    = "tcp"
+       cidr_blocks = ["0.0.0.0/0"]
+     }
+
+     ingress {
+       from_port       = 22
+       to_port         = 22
+       protocol        = "tcp"
+       security_groups = [aws_security_group.bastion_sg.id]
+     }
+
+     egress {
+       from_port   = 0
+       to_port     = 0
+       protocol    = "-1"
+       cidr_blocks = ["0.0.0.0/0"]
+     }
+
+     tags = merge(var.tags, {
+       Name = "WebTier-SG"
+     })
+   }
+
+   resource "aws_security_group" "app_tier_sg" {
+     name        = "AppTier-SG"
+     description = "Security group for application servers"
+     vpc_id      = aws_vpc.secure_vpc.id
+
+     ingress {
+       from_port       = 8080
+       to_port         = 8080
+       protocol        = "tcp"
+       security_groups = [aws_security_group.web_tier_sg.id]
+     }
+
+     ingress {
+       from_port       = 22
+       to_port         = 22
+       protocol        = "tcp"
+       security_groups = [aws_security_group.bastion_sg.id]
+     }
+
+     egress {
+       from_port   = 0
+       to_port     = 0
+       protocol    = "-1"
+       cidr_blocks = ["0.0.0.0/0"]
+     }
+
+     tags = merge(var.tags, {
+       Name = "AppTier-SG"
+     })
+   }
+
+   resource "aws_security_group" "data_tier_sg" {
+     name        = "DataTier-SG"
+     description = "Security group for database servers"
+     vpc_id      = aws_vpc.secure_vpc.id
+
+     ingress {
+       from_port       = 3306
+       to_port         = 3306
+       protocol        = "tcp"
+       security_groups = [aws_security_group.app_tier_sg.id]
+     }
+
+     ingress {
+       from_port       = 22
+       to_port         = 22
+       protocol        = "tcp"
+       security_groups = [aws_security_group.bastion_sg.id]
+     }
+
+     egress {
+       from_port   = 0
+       to_port     = 0
+       protocol    = "-1"
+       cidr_blocks = ["0.0.0.0/0"]
+     }
+
+     tags = merge(var.tags, {
+       Name = "DataTier-SG"
+     })
+   }
+
+   # VPC Flow Log
+   resource "aws_flow_log" "vpc_flow_log" {
+     log_destination      = aws_cloudwatch_log_group.flow_log_group.arn
+     log_destination_type = "cloud-watch-logs"
+     traffic_type         = "ALL"
+     vpc_id               = aws_vpc.secure_vpc.id
+     iam_role_arn         = aws_iam_role.flow_log_role.arn
+
+     tags = merge(var.tags, {
+       Name = "SecureVPC-FlowLog"
+     })
+   }
+
+   # CloudWatch Log Group for Flow Logs
+   resource "aws_cloudwatch_log_group" "flow_log_group" {
+     name              = "VPC-Flow-Logs"
+     retention_in_days = 30
+
+     tags = var.tags
+   }
+
+   # IAM Role for Flow Logs
+   resource "aws_iam_role" "flow_log_role" {
+     name = "FlowLogRole"
+
+     assume_role_policy = jsonencode({
+       Version = "2012-10-17"
+       Statement = [{
+         Action = "sts:AssumeRole"
+         Effect = "Allow"
+         Principal = {
+           Service = "vpc-flow-logs.amazonaws.com"
+         }
+       }]
+     })
+
+     tags = var.tags
+   }
+
+   # IAM Policy for Flow Logs
+   resource "aws_iam_role_policy" "flow_log_policy" {
+     name = "FlowLogPolicy"
+     role = aws_iam_role.flow_log_role.id
+
+     policy = jsonencode({
+       Version = "2012-10-17"
+       Statement = [{
+         Action = [
+           "logs:CreateLogGroup",
+           "logs:CreateLogStream",
+           "logs:PutLogEvents",
+           "logs:DescribeLogGroups",
+           "logs:DescribeLogStreams"
+         ]
+         Effect   = "Allow"
+         Resource = "*"
+       }]
+     })
+   }
+
+   # S3 VPC Endpoint
+   resource "aws_vpc_endpoint" "s3" {
+     vpc_id            = aws_vpc.secure_vpc.id
+     service_name      = "com.amazonaws.${var.aws_region}.s3"
+     vpc_endpoint_type = "Gateway"
+     route_table_ids   = [aws_route_table.public_rt.id, aws_route_table.private_rt.id]
+
+     tags = merge(var.tags, {
+       Name = "S3-Endpoint"
+     })
+   }
+   ```
+
+3. Create `outputs.tf` to define useful outputs:
+   ```hcl
+   output "vpc_id" {
+     description = "ID of the VPC"
+     value       = aws_vpc.secure_vpc.id
+   }
+
+   output "public_subnet_ids" {
+     description = "IDs of the public subnets"
+     value       = aws_subnet.public_subnets[*].id
+   }
+
+   output "private_subnet_ids" {
+     description = "IDs of the private subnets"
+     value       = aws_subnet.private_subnets[*].id
+   }
+
+   output "bastion_sg_id" {
+     description = "ID of the bastion security group"
+     value       = aws_security_group.bastion_sg.id
+   }
+
+   output "web_tier_sg_id" {
+     description = "ID of the web tier security group"
+     value       = aws_security_group.web_tier_sg.id
+   }
+
+   output "app_tier_sg_id" {
+     description = "ID of the app tier security group"
+     value       = aws_security_group.app_tier_sg.id
+   }
+
+   output "data_tier_sg_id" {
+     description = "ID of the data tier security group"
+     value       = aws_security_group.data_tier_sg.id
+   }
+
+   output "nat_gateway_ip" {
+     description = "Elastic IP address of the NAT Gateway"
+     value       = aws_eip.nat_eip.public_ip
+   }
+   ```
+
+4. Create `terraform.tfvars` with your specific values:
+   ```hcl
+   aws_region           = "us-east-1"
+   vpc_cidr             = "10.0.0.0/16"
+   public_subnet_cidrs  = ["10.0.1.0/24", "10.0.2.0/24"]
+   private_subnet_cidrs = ["10.0.3.0/24", "10.0.4.0/24"]
+   availability_zones   = ["us-east-1a", "us-east-1b"]
+   allowed_ssh_cidr     = "YOUR_IP_ADDRESS/32"  # Replace with your IP
+   tags = {
+     Project     = "CloudSecurityLab"
+     Environment = "Development"
+     Terraform   = "true"
+     Owner       = "YourName"
+   }
+   ```
+
+### Deploying the Infrastructure
+
+1. Initialize Terraform:
+   ```bash
+   terraform init
+   ```
+
+2. Review the planned changes:
+   ```bash
+   terraform plan
+   ```
+
+3. Apply the changes:
+   ```bash
+   terraform apply
+   ```
+
+4. When you're done, destroy the resources:
+   ```bash
+   terraform destroy
+   ```
+
+### Best Practices Demonstrated
+
+1. **Network Segmentation**: Separating resources across different subnets
+2. **Defense in Depth**: Multiple security controls at different layers
+3. **Principle of Least Privilege**: Restricting network access to what's necessary
+4. **Resource Monitoring**: Using VPC Flow Logs to capture traffic information
+5. **Secure Access Patterns**: Using bastion hosts for administrative access
+6. **Infrastructure as Code**: Defining the architecture in version-controlled code
+7. **Modular Design**: Using variables for configurable values
+8. **Private Network Communication**: Using VPC endpoints for AWS services
+
+## Resources
+
+- [AWS VPC Documentation](https://docs.aws.amazon.com/vpc/latest/userguide/what-is-amazon-vpc.html)
+- [AWS Security Groups Documentation](https://docs.aws.amazon.com/vpc/latest/userguide/vpc-security-groups.html)
+- [AWS NACLs Documentation](https://docs.aws.amazon.com/vpc/latest/userguide/vpc-network-acls.html)
+- [AWS VPC Flow Logs Documentation](https://docs.aws.amazon.com/vpc/latest/userguide/flow-logs.html)
+- [AWS VPC Endpoints Documentation](https://docs.aws.amazon.com/vpc/latest/privatelink/vpc-endpoints.html)
+- [AWS Transit Gateway Documentation](https://docs.aws.amazon.com/vpc/latest/tgw/what-is-transit-gateway.html)
+- [Terraform AWS Provider Documentation](https://registry.terraform.io/providers/hashicorp/aws/latest/docs)
+- [Network Security Best Practices](https://aws.amazon.com/architecture/security-identity-compliance/?cards-all.sort-by=item.additionalFields.sortDate&cards-all.sort-order=desc) 

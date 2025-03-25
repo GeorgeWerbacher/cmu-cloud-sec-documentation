@@ -1,4 +1,6 @@
 {
   "index": "Overview",
-  "lab1": "Lab 1: AWS Account Fundamentals"
+  "lab1": "Lab 1: AWS Account Fundamentals",
+  "lab2": "Lab 2: Advanced IAM & Federation",
+  "lab3": "Lab 3: Secure AWS Networking"
 }
