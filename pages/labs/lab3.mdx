@@ -889,11 +889,6 @@ In this section, you'll learn how to implement the same network architecture usi
    terraform apply
    ```
 
-4. When you're done, destroy the resources:
-   ```bash
-   terraform destroy
-   ```
-
 ### Best Practices Demonstrated
 
 1. **Network Segmentation**: Separating resources across different subnets
@@ -904,6 +899,144 @@ In this section, you'll learn how to implement the same network architecture usi
 6. **Infrastructure as Code**: Defining the architecture in version-controlled code
 7. **Modular Design**: Using variables for configurable values
 8. **Private Network Communication**: Using VPC endpoints for AWS services
+
+## Cleaning Up Resources
+
+To avoid unexpected AWS charges, it's crucial to properly clean up all resources created during this lab. Follow these steps in the specified order to ensure complete removal of all resources.
+
+### Manual Clean-Up Instructions
+
+1. **Delete EC2 Instances**
+   - Navigate to EC2 Dashboard
+   - Select "Instances" in the left navigation pane
+   - Select all instances created during this lab (Bastion-Host, Web-Server, App-Server, DB-Server)
+   - Click "Instance state" > "Terminate instance"
+   - Confirm termination
+
+2. **Delete VPC Endpoints**
+   - Navigate to VPC Dashboard
+   - Select "Endpoints" in the left navigation pane
+   - Select all endpoints you created
+   - Click "Actions" > "Delete VPC endpoints"
+   - Confirm deletion
+
+3. **Delete Transit Gateway Attachments** (if created)
+   - Navigate to VPC Dashboard
+   - Select "Transit Gateway Attachments"
+   - Select all attachments
+   - Click "Actions" > "Delete Transit Gateway Attachment"
+   - Confirm deletion
+   - Wait for the attachments to be deleted before proceeding
+
+4. **Delete Transit Gateway** (if created)
+   - Navigate to VPC Dashboard
+   - Select "Transit Gateways"
+   - Select your transit gateway
+   - Click "Actions" > "Delete Transit Gateway"
+   - Confirm deletion
+
+5. **Delete VPC Peering Connection** (if created)
+   - Navigate to VPC Dashboard
+   - Select "Peering connections"
+   - Select your peering connection
+   - Click "Actions" > "Delete peering connection"
+   - Confirm deletion
+
+6. **Delete NAT Gateway**
+   - Navigate to VPC Dashboard
+   - Select "NAT Gateways"
+   - Select your NAT gateway
+   - Click "Actions" > "Delete NAT gateway"
+   - Confirm deletion
+   - **Important**: Wait for the NAT gateway to fully delete before proceeding
+
+7. **Release Elastic IP**
+   - Navigate to VPC Dashboard
+   - Select "Elastic IPs"
+   - Select the Elastic IP used for your NAT gateway
+   - Click "Actions" > "Release Elastic IP address"
+   - Confirm release
+
+8. **Delete Secondary VPC** (if created)
+   - Navigate to VPC Dashboard
+   - Select "Your VPCs"
+   - Select your secondary VPC
+   - Click "Actions" > "Delete VPC"
+   - Type "delete" to confirm
+   - Click "Delete"
+
+9. **Delete Primary VPC**
+   - Navigate to VPC Dashboard
+   - Select "Your VPCs"
+   - Select your primary VPC (SecureVPC)
+   - Click "Actions" > "Delete VPC"
+   - This will delete all associated resources:
+     - Subnets
+     - Route tables
+     - Network ACLs
+     - Security groups
+     - Internet gateway
+   - Type "delete" to confirm
+   - Click "Delete"
+
+10. **Delete CloudWatch Log Group**
+    - Navigate to CloudWatch Dashboard
+    - Select "Log groups" in the left navigation pane
+    - Select the "VPC-Flow-Logs" log group
+    - Click "Actions" > "Delete log group"
+    - Confirm deletion
+
+11. **Verify Clean-Up**
+    - Check the following consoles to ensure all resources are deleted:
+      - EC2 Dashboard > Instances
+      - VPC Dashboard > Your VPCs
+      - CloudWatch Dashboard > Log groups
+      - VPC Dashboard > Elastic IPs
+
+### Terraform Clean-Up
+
+If you deployed resources using Terraform, clean-up is much simpler:
+
+1. **Navigate to your Terraform project directory**
+   ```bash
+   cd lab3-terraform
+   ```
+
+2. **Destroy all resources**
+   ```bash
+   terraform destroy
+   ```
+
+3. **Confirm destruction**
+   - Type `yes` when prompted
+   - Wait for all resources to be destroyed
+   - Terraform will output "Destroy complete!" when finished
+
+4. **Verify Clean-Up**
+   - Check the AWS Management Console to ensure all resources have been deleted
+   - If any resources remain, note their IDs and delete them manually
+
+### Final Check for Hidden Resources
+
+Some resources can be easily missed during clean-up. Check these areas:
+
+1. **Network Interfaces**
+   - Navigate to EC2 Dashboard > Network Interfaces
+   - Delete any remaining interfaces associated with your resources
+
+2. **Snapshots and AMIs**
+   - Check EC2 Dashboard > Snapshots and AMIs
+   - Delete any created during the lab
+
+3. **CloudWatch Alarms**
+   - Check CloudWatch Dashboard > Alarms
+   - Delete any created during the lab
+
+4. **IAM Roles**
+   - Check IAM Dashboard > Roles
+   - Delete any created for this lab (e.g., Flow Log roles)
+
+Remember that leaving resources running in AWS will incur charges. Always verify that all resources have been properly deleted after completing labs.
 
 ## Resources
 

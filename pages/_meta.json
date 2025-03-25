@@ -1,6 +1,9 @@
 {
   "index": "Introduction",
-  "labs": "Labs",
+  "labs": {
+    "title": "Labs",
+    "type": "folder"
+  },
   "---": {
     "type": "separator"
   },
