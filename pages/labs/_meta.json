@@ -2,5 +2,6 @@
   "index": "Overview",
   "lab1": "Lab 1: AWS Account Fundamentals",
   "lab2": "Lab 2: Advanced IAM & Federation",
-  "lab3": "Lab 3: Secure AWS Networking"
+  "lab3": "Lab 3: Secure AWS Networking",
+  "lab4": "Lab 4: AWS Security Services & Monitoring"
 }

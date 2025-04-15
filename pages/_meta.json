@@ -2,7 +2,8 @@
   "index": "Introduction",
   "labs": {
     "title": "Labs",
-    "type": "folder"
+    "type": "folder",
+    "display": "visible"
   },
   "---": {
     "type": "separator"

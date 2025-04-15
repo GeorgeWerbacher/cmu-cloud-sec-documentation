@@ -1,0 +1,734 @@
+---
+title: 'Lab 4: AWS Security Services & Monitoring'
+description: 'Implement comprehensive security monitoring and automated incident response in AWS'
+---
+
+<div className="lab-content">
+
+# Lab 4: AWS Security Services & Monitoring
+
+## Overview
+
+Building on the foundation established in the previous labs, this lab focuses on implementing comprehensive security monitoring and automated incident response in AWS. You'll configure various AWS security services to detect threats, monitor your environment, and respond to security events. Understanding how to properly monitor your cloud resources is essential for maintaining a strong security posture and ensuring compliance with security standards.
+
+## Prerequisites
+
+- Completion of Lab 1: AWS Account Fundamentals
+- Completion of Lab 2: Advanced IAM & Federation
+- Completion of Lab 3: Secure AWS Networking
+- An AWS account with administrator access
+- AWS CLI installed and configured
+- Basic understanding of security monitoring concepts
+- Web browser and internet connection
+
+## Learning Objectives
+
+By the end of this lab, you'll be able to:
+
+1. Configure AWS CloudTrail for comprehensive API activity logging
+2. Set up AWS Config for resource configuration monitoring and compliance
+3. Implement AWS Security Hub for centralized security posture management
+4. Deploy Amazon GuardDuty for intelligent threat detection
+5. Create Amazon CloudWatch alarms for security-related events
+6. Design and implement automated incident response workflows using AWS EventBridge
+7. Utilize AWS Systems Manager for secure instance management
+8. Implement AWS Inspector for automated vulnerability assessment
+9. Create a security incident playbook for common AWS security events
+
+## Security Monitoring in AWS
+
+Before diving into hands-on exercises, it's important to understand the key security monitoring components in AWS:
+
+- **AWS CloudTrail**: Records API calls for your account and delivers log files
+- **AWS Config**: Provides resource inventory, configuration history, and configuration change notifications
+- **AWS Security Hub**: Provides a comprehensive view of your security posture across AWS accounts
+- **Amazon GuardDuty**: Intelligent threat detection service that continuously monitors for malicious activity
+- **Amazon CloudWatch**: Monitoring and observability service that provides data and insights
+- **AWS EventBridge**: Serverless event bus that connects application data from your own apps and AWS services
+- **AWS Systems Manager**: Provides visibility and control of your AWS resources
+- **Amazon Inspector**: Automated security assessment service that helps improve security and compliance
+
+## Reference Architecture
+
+Throughout this lab, we'll build the following reference architecture:
+
+```
+┌────────────────────────────────────────────────────────────────────────┐
+│                               AWS Cloud                                 │
+│                                                                         │
+│  ┌─────────────┐     ┌─────────────┐     ┌─────────────┐               │
+│  │  CloudTrail │─────│ CloudWatch  │─────│ EventBridge │               │
+│  └─────────────┘     └─────────────┘     └─────────────┘               │
+│         │                   │                   │                       │
+│         │                   │                   │                       │
+│         ▼                   ▼                   ▼                       │
+│  ┌─────────────┐     ┌─────────────┐     ┌─────────────┐               │
+│  │   S3 Logs   │     │   Alarms    │─────│  Lambda     │───┐           │
+│  └─────────────┘     └─────────────┘     └─────────────┘   │           │
+│                                                             │           │
+│  ┌─────────────┐     ┌─────────────┐     ┌─────────────┐   │           │
+│  │  GuardDuty  │─────│ Security Hub│─────│    SNS      │◄──┘           │
+│  └─────────────┘     └─────────────┘     └─────────────┘               │
+│         │                   ▲                   │                       │
+│         │                   │                   │                       │
+│         ▼                   │                   ▼                       │
+│  ┌─────────────┐     ┌─────────────┐     ┌─────────────┐               │
+│  │    Config   │─────│  Inspector  │     │    Email    │               │
+│  └─────────────┘     └─────────────┘     └─────────────┘               │
+│                                                                         │
+└────────────────────────────────────────────────────────────────────────┘
+```
+
+This architecture implements:
+- **Comprehensive Logging**: All API activity is recorded and stored securely
+- **Continuous Monitoring**: Resources and activities are constantly monitored for security issues
+- **Automated Response**: Security events automatically trigger appropriate responses
+- **Centralized Management**: Security findings from multiple services are aggregated in Security Hub
+- **Alerting**: Critical security events generate notifications for security personnel
+
+## Detailed Instructions
+
+### Task 1: Configure AWS CloudTrail
+
+1. **Set Up a Multi-Region Trail**
+   - Sign in to AWS Management Console
+   - Navigate to CloudTrail Dashboard
+   - Click "Create trail"
+   - Configure the trail:
+     - Name: `SecurityTrail`
+     - Storage location: Create a new S3 bucket (CloudTrail will create with proper permissions)
+     - Log file SSE-KMS encryption: Enabled (create a new KMS key)
+     - Log file validation: Enabled
+     - Multi-region trail: Enabled
+     - Management events: All Read/Write events
+     - Data events: S3 objects (Read/Write)
+     - Insights events: Enabled
+   - Create the trail
+
+2. **Configure CloudTrail Log File Integrity Validation**
+   - The log file validation option was enabled during creation
+   - To verify logs have not been modified:
+     - Navigate to the S3 bucket where logs are stored
+     - CloudTrail stores digest files alongside log files
+     - You can use the AWS CLI to validate log files:
+   ```bash
+   aws cloudtrail validate-logs --trail-arn <your-trail-arn> --start-time <start-time>
+   ```
+
+3. **Configure CloudTrail Insights**
+   - CloudTrail Insights help you identify unusual API activity in your account
+   - Navigate to your trail settings
+   - In the "Insights events" section, ensure it's enabled for:
+     - API call rate
+     - API error rate
+   - Save the changes
+   - It may take up to 36 hours for Insights to begin appearing
+
+### Task 2: Set Up AWS Config
+
+1. **Enable AWS Config**
+   - Navigate to AWS Config Dashboard
+   - Click "Get started" or "Set up AWS Config"
+   - Configure recording:
+     - Record all resources (including global resources)
+     - Use the existing S3 bucket created for CloudTrail, or create a new one
+     - Enable SNS notifications for configuration changes
+     - Create an AWS Config service-linked role (or use existing)
+   - Click "Next"
+
+2. **Set Up AWS Config Rules**
+   - On the "Rules" page, add the following rules:
+     - `cloudtrail-enabled`: Checks if CloudTrail is enabled
+     - `encrypted-volumes`: Checks if EBS volumes are encrypted
+     - `vpc-flow-logs-enabled`: Checks if VPC Flow Logs are enabled
+     - `root-account-mfa-enabled`: Checks if the root account has MFA enabled
+     - `iam-user-mfa-enabled`: Checks if IAM users have MFA enabled
+     - `restricted-ssh`: Checks if security groups allow unrestricted SSH access
+   - Click "Next" and then "Confirm"
+
+3. **Create a Custom AWS Config Rule (Optional)**
+   - Navigate to AWS Config > Rules
+   - Click "Add rule" > "Create custom rule"
+   - Configure a Lambda function that checks for appropriate resource tagging:
+   ```python
+   import json
+   import boto3
+   import botocore
+   
+   config = boto3.client('config')
+   
+   REQUIRED_TAGS = ['Owner', 'Environment', 'Project']
+   
+   def evaluate_compliance(configuration_item, rule_parameters):
+       if configuration_item['resourceType'] not in ['AWS::EC2::Instance', 'AWS::S3::Bucket']:
+           return 'NOT_APPLICABLE'
+       
+       tags = configuration_item['configuration'].get('tags', [])
+       tag_keys = [tag['key'] for tag in tags]
+       
+       for required_tag in REQUIRED_TAGS:
+           if required_tag not in tag_keys:
+               return 'NON_COMPLIANT'
+       
+       return 'COMPLIANT'
+   
+   def lambda_handler(event, context):
+       invoking_event = json.loads(event['invokingEvent'])
+       configuration_item = invoking_event['configurationItem']
+       
+       compliance_type = evaluate_compliance(configuration_item, event['ruleParameters'])
+       
+       evaluation = {
+           'ComplianceResourceType': configuration_item['resourceType'],
+           'ComplianceResourceId': configuration_item['resourceId'],
+           'ComplianceType': compliance_type,
+           'OrderingTimestamp': configuration_item['configurationItemCaptureTime']
+       }
+       
+       config.put_evaluations(
+           Evaluations=[evaluation],
+           ResultToken=event['resultToken']
+       )
+   ```
+   - Create the rule with this Lambda function
+   - Name it "required-tags-rule"
+
+### Task 3: Implement AWS Security Hub
+
+1. **Enable AWS Security Hub**
+   - Navigate to Security Hub Dashboard
+   - Click "Go to Security Hub" or "Enable Security Hub"
+   - On the welcome page, click "Enable Security Hub"
+   - Enable the default security standards:
+     - AWS Foundational Security Best Practices
+     - CIS AWS Foundations Benchmark
+     - PCI DSS
+   - Click "Enable Security Hub"
+
+2. **Explore Security Standards and Controls**
+   - After enabling Security Hub, navigate to "Security standards"
+   - Explore the enabled standards and their controls
+   - Note the current compliance status
+   - Click on a standard to see individual controls
+   - Click on a control to see details about the check and affected resources
+
+3. **Integrate Security Hub with Other Services**
+   - Navigate to "Integrations"
+   - Enable integrations with the following services:
+     - Amazon GuardDuty: Click "Accept findings"
+     - AWS Config: Click "Accept findings"
+     - Amazon Inspector: Click "Accept findings" (will be enabled in a later task)
+   - This will aggregate findings from all these services into Security Hub
+
+### Task 4: Deploy Amazon GuardDuty
+
+1. **Enable Amazon GuardDuty**
+   - Navigate to GuardDuty Dashboard
+   - Click "Get Started" or "Enable GuardDuty"
+   - Click "Enable GuardDuty"
+   - GuardDuty will begin monitoring for threats immediately
+
+2. **Configure GuardDuty Notification Settings**
+   - Navigate to "Settings"
+   - In the "Findings export options" section, configure:
+     - S3 export: Enable and select your CloudTrail S3 bucket
+     - Frequency: "Create new findings as they are generated"
+   - Save the settings
+
+3. **Generate Sample Findings**
+   - Navigate to "Settings"
+   - Under "Sample findings", click "Generate sample findings"
+   - Go to "Findings" to see the sample findings
+   - Explore different types of findings that GuardDuty can detect
+
+4. **Set Up GuardDuty Findings Notification**
+   - Create an SNS topic for GuardDuty findings:
+     - Navigate to Amazon SNS
+     - Click "Create topic"
+     - Type: Standard
+     - Name: `GuardDutyFindings`
+     - Create the topic
+   - Create a subscription:
+     - Protocol: Email
+     - Endpoint: Your email address
+     - Confirm the subscription via the email you receive
+   - Create an EventBridge rule for GuardDuty findings:
+     - Navigate to Amazon EventBridge > Rules
+     - Click "Create rule"
+     - Name: `GuardDutyFindingsRule`
+     - Rule type: "Rule with an event pattern"
+     - Event pattern:
+     ```json
+     {
+       "source": ["aws.guardduty"],
+       "detail-type": ["GuardDuty Finding"]
+     }
+     ```
+     - Target: SNS topic
+     - Select the `GuardDutyFindings` topic
+     - Create the rule
+
+### Task 5: Create CloudWatch Alarms for Security Events
+
+1. **Create CloudWatch Log Groups for Security Events**
+   - Navigate to CloudWatch Dashboard
+   - Select "Log groups" in the left navigation pane
+   - Create a log group for security events:
+     - Click "Create log group"
+     - Name: `SecurityEvents`
+     - Click "Create"
+
+2. **Create a CloudWatch Metric Filter for Root Login Attempts**
+   - Navigate to the CloudTrail log group (different from the one you just created)
+   - Click "Metric filters" tab
+   - Click "Create metric filter"
+   - Filter pattern:
+   ```
+   { $.userIdentity.type = "Root" && $.userIdentity.invokedBy NOT EXISTS && $.eventType != "AwsServiceEvent" }
+   ```
+   - Test the pattern with sample CloudTrail events
+   - Click "Next"
+   - Filter name: `RootAccountUsage`
+   - Metric namespace: `CloudTrailMetrics`
+   - Metric name: `RootAccountUsageCount`
+   - Metric value: 1
+   - Default value: 0
+   - Create the filter
+
+3. **Create a CloudWatch Alarm for Root Login**
+   - After creating the metric filter, click "Create alarm"
+   - Specify metric and conditions:
+     - Statistic: Sum
+     - Period: 5 minutes
+     - Threshold type: Static
+     - Condition: Greater than or equal to 1
+   - Configure actions:
+     - Alarm state trigger: In alarm
+     - Select an SNS topic: Create a new topic
+     - Topic name: `SecurityAlerts`
+     - Email endpoints: Enter your email address
+   - Add a name and description:
+     - Name: `RootAccountUsageAlarm`
+     - Description: "Alarm for root account usage"
+   - Create the alarm
+
+4. **Create Additional Security Alarms**
+   - Repeat the process to create alarms for:
+     - Unauthorized API calls (using filter for AccessDenied errors)
+     - Changes to security groups
+     - Changes to NACLs
+     - Changes to IAM policies
+
+### Task 6: Design Automated Incident Response with AWS EventBridge
+
+1. **Create a Lambda Function for Incident Response**
+   - Navigate to Lambda Dashboard
+   - Click "Create function"
+   - Function name: `SecurityIncidentHandler`
+   - Runtime: Python 3.9
+   - Create a new execution role with basic Lambda permissions
+   - Click "Create function"
+   - Add the following code:
+   ```python
+   import json
+   import boto3
+   import os
+   from datetime import datetime
+   
+   sns = boto3.client('sns')
+   ec2 = boto3.client('ec2')
+   
+   SNS_TOPIC_ARN = os.environ['SNS_TOPIC_ARN']
+   
+   def lambda_handler(event, context):
+       print(f"Received event: {json.dumps(event)}")
+       
+       if 'detail' not in event:
+           return {
+               'statusCode': 400,
+               'body': 'Event does not contain detail'
+           }
+           
+       detail = event['detail']
+       event_name = detail.get('eventName', 'Unknown')
+       
+       # Handle different security incidents based on eventName
+       if event_name == 'AuthorizeSecurityGroupIngress':
+           handle_security_group_change(detail)
+       elif event_name == 'ConsoleLogin' and detail.get('errorMessage') == 'Failed authentication':
+           handle_failed_login(detail)
+       else:
+           # Generic handler for other events
+           send_notification(f"Security event detected: {event_name}", json.dumps(detail, indent=2))
+           
+       return {
+           'statusCode': 200,
+           'body': 'Processed security event'
+       }
+       
+   def handle_security_group_change(detail):
+       request_parameters = detail.get('requestParameters', {})
+       group_id = request_parameters.get('groupId', 'Unknown')
+       
+       if 'ipPermissions' in request_parameters:
+           permissions = request_parameters['ipPermissions']
+           for permission in permissions:
+               if 'ipRanges' in permission:
+                   for ip_range in permission['ipRanges']:
+                       if ip_range.get('cidrIp') == '0.0.0.0/0':
+                           # Found a security group change that opens to the world
+                           send_notification(
+                               "Security Group Change Alert", 
+                               f"Security group {group_id} was modified to allow access from 0.0.0.0/0 on port(s) {permission.get('fromPort', 'Unknown')}-{permission.get('toPort', 'Unknown')}. Event time: {detail.get('eventTime', 'Unknown')}"
+                           )
+   
+   def handle_failed_login(detail):
+       user_identity = detail.get('userIdentity', {})
+       username = user_identity.get('userName', 'Unknown')
+       source_ip = detail.get('sourceIPAddress', 'Unknown')
+       
+       send_notification(
+           "Failed Login Attempt", 
+           f"Failed login attempt detected for user {username} from IP {source_ip}. Event time: {detail.get('eventTime', 'Unknown')}"
+       )
+   
+   def send_notification(subject, message):
+       response = sns.publish(
+           TopicArn=SNS_TOPIC_ARN,
+           Subject=subject,
+           Message=message
+       )
+       print(f"SNS publish response: {response}")
+   ```
+   - In the "Configuration" tab, add an environment variable:
+     - Key: `SNS_TOPIC_ARN`
+     - Value: The ARN of the SecurityAlerts SNS topic
+
+2. **Create EventBridge Rules for Security Events**
+   - Navigate to Amazon EventBridge > Rules
+   - Click "Create rule"
+   - Name: `SecurityGroupChangeRule`
+   - Description: "Detect security group changes"
+   - Rule type: "Rule with an event pattern"
+   - Event pattern:
+   ```json
+   {
+     "source": ["aws.ec2"],
+     "detail-type": ["AWS API Call via CloudTrail"],
+     "detail": {
+       "eventSource": ["ec2.amazonaws.com"],
+       "eventName": ["AuthorizeSecurityGroupIngress", "AuthorizeSecurityGroupEgress"]
+     }
+   }
+   ```
+   - Target: Lambda function
+   - Function: `SecurityIncidentHandler`
+   - Create the rule
+
+3. **Create Additional EventBridge Rules**
+   - Create rules for:
+     - Failed console logins
+     - IAM policy changes
+     - VPC configuration changes
+     - Each rule should target the same Lambda function
+
+4. **Test the Automated Response**
+   - Generate security events by:
+     - Attempting to log in with incorrect credentials
+     - Modifying a security group to allow public access
+     - Changing an IAM policy
+   - Check your email for notifications from the SNS topic
+   - Check the CloudWatch Logs for the Lambda function to see the processed events
+
+### Task 7: Utilize AWS Systems Manager for Secure Instance Management
+
+1. **Set Up AWS Systems Manager**
+   - Navigate to Systems Manager Dashboard
+   - In the left navigation pane, select "Quick Setup"
+   - Click "Create"
+   - Configuration type: "Host Management"
+   - Configuration options:
+     - Select all management options
+     - Target all instances
+   - Click "Create"
+
+2. **Create a Patch Baseline and Patching Schedule**
+   - In Systems Manager, navigate to "Patch Manager"
+   - Click "View predefined patch baselines"
+   - Click "Create patch baseline"
+   - Configure the baseline:
+     - Name: `SecurityPatchBaseline`
+     - Operating system: Amazon Linux 2
+     - Approval rules:
+       - Product: All
+       - Classification: Security, Critical
+       - Severity: Critical, Important
+       - Auto-approval: After 7 days
+   - Create the baseline
+   - Create a patch group:
+     - Navigate to "Patch Manager" > "Patch groups"
+     - Click "Create patch group"
+     - Patch group name: `SecurityCriticalSystems`
+     - Associated patch baseline: `SecurityPatchBaseline`
+   - Create a maintenance window:
+     - Navigate to "Maintenance Windows"
+     - Click "Create maintenance window"
+     - Name: `SecurityPatchingWindow`
+     - Schedule: Weekly on Sunday at 2:00 AM (using cron expression)
+     - Duration: 3 hours
+     - Stop initiating tasks: 1 hour before end
+     - Click "Create maintenance window"
+
+3. **Configure Session Manager for Secure Shell Access**
+   - In Systems Manager, navigate to "Session Manager"
+   - Click "Configure preferences"
+   - In the "General preferences" tab:
+     - Enable run as support: Yes
+     - Allow only specified IAM roles: Enable and specify roles
+   - In the "Logging" tab:
+     - Enable CloudWatch logs
+     - Enable S3 logging to your CloudTrail bucket
+     - Enable encryption using your KMS key
+   - Save the preferences
+
+### Task 8: Implement AWS Inspector for Vulnerability Assessment
+
+1. **Enable Amazon Inspector**
+   - Navigate to Amazon Inspector Dashboard
+   - Click "Get started" or "Enable Inspector"
+   - In the "Scan targets" section, enable:
+     - Amazon EC2 instances
+     - Amazon ECR container images (if using containers)
+   - Click "Enable Inspector"
+
+2. **Configure Assessment Targets and Templates**
+   - Inspector will automatically create an assessment target for all EC2 instances
+   - Configure assessment templates:
+     - Navigate to "Assessment templates"
+     - Click "Create"
+     - Name: `ComprehensiveAssessment`
+     - Rules packages: Select all available packages
+     - Duration: 1 hour
+     - Create the template
+
+3. **Run and Review Assessment Results**
+   - Start an assessment run:
+     - Select your assessment template
+     - Click "Run"
+   - Wait for the assessment to complete
+   - Review findings:
+     - Navigate to "Findings"
+     - Review the list of findings
+     - Sort by severity
+     - Click on individual findings to see details and remediation advice
+
+4. **Set Up Regular Assessment Runs**
+   - Use EventBridge to schedule regular runs:
+     - Navigate to Amazon EventBridge > Rules
+     - Click "Create rule"
+     - Name: `WeeklyInspectorAssessment`
+     - Rule type: "Schedule"
+     - Schedule pattern: Fixed rate of 7 days
+     - Target: Lambda function (create a new function to start Inspector assessments)
+     - Lambda function code:
+     ```python
+     import boto3
+     
+     inspector = boto3.client('inspector')
+     
+     def lambda_handler(event, context):
+         response = inspector.start_assessment_run(
+             assessmentTemplateArn='YOUR_ASSESSMENT_TEMPLATE_ARN',
+             assessmentRunName='Scheduled-Assessment-' + context.aws_request_id
+         )
+         return {
+             'statusCode': 200,
+             'body': 'Started assessment run: ' + response['assessmentRunArn']
+         }
+     ```
+     - Create the rule
+
+### Task 9: Create a Security Incident Playbook
+
+1. **Define a CloudTrail Incident Response Playbook**
+   - Document the steps to take when suspicious activity is detected in CloudTrail:
+     - Identify the user, IP address, and actions performed
+     - Evaluate if the activity is authorized or suspicious
+     - Revoke active sessions if needed (using IAM)
+     - Rotate access keys if compromise is suspected
+     - Document the incident and actions taken
+
+2. **Define a Security Group Change Playbook**
+   - Document the steps to take when unauthorized security group changes are detected:
+     - Identify the security group and the changes made
+     - Evaluate if the changes align with security policies
+     - Revert unauthorized changes
+     - Document the incident and actions taken
+
+3. **Create AWS Systems Manager Documents for Automated Response**
+   - Navigate to Systems Manager > Documents
+   - Click "Create document"
+   - Document type: Command
+   - Name: `SecurityIncidentResponsePlaybook`
+   - Content:
+   ```yaml
+   schemaVersion: '2.2'
+   description: 'Command document for security incident response'
+   parameters:
+     IncidentType:
+       type: String
+       description: 'Type of security incident'
+       allowedValues:
+         - UnauthorizedAccess
+         - DataExfiltration
+         - MalwareDetection
+   mainSteps:
+     - action: aws:runShellScript
+       name: CollectForensicData
+       inputs:
+         runCommand:
+           - |
+             #!/bin/bash
+             echo "Collecting data for incident type: {{ IncidentType }}"
+             mkdir -p /tmp/security-incident
+             date > /tmp/security-incident/timestamp.txt
+             ps aux > /tmp/security-incident/processes.txt
+             netstat -tuln > /tmp/security-incident/network_connections.txt
+             find /tmp -type f -mtime -1 > /tmp/security-incident/recent_files.txt
+             # Add more forensic data collection as needed
+             tar -czf /tmp/security-incident.tar.gz /tmp/security-incident
+             echo "Forensic data collected at /tmp/security-incident.tar.gz"
+   ```
+   - Create the document
+
+## Cleaning Up Resources
+
+To avoid unexpected AWS charges, it's crucial to properly clean up all resources created during this lab. Follow these steps in the specified order to ensure complete removal of all resources.
+
+### Manual Clean-Up Instructions
+
+1. **Disable AWS Inspector**
+   - Navigate to AWS Inspector Dashboard
+   - Click "Settings"
+   - Click "Disable Inspector"
+   - Confirm by typing "disable"
+
+2. **Disable AWS GuardDuty**
+   - Navigate to GuardDuty Dashboard
+   - Click "Settings"
+   - Click "Disable GuardDuty"
+   - Confirm by typing "disable"
+
+3. **Disable AWS Security Hub**
+   - Navigate to Security Hub Dashboard
+   - Click "Settings"
+   - Click "General"
+   - Click "Disable Security Hub"
+   - Confirm the action
+
+4. **Delete Lambda Functions**
+   - Navigate to Lambda Dashboard
+   - Select the `SecurityIncidentHandler` function
+   - Click "Actions" > "Delete"
+   - Confirm deletion
+
+5. **Delete EventBridge Rules**
+   - Navigate to EventBridge > Rules
+   - Select each rule you created
+   - Click "Delete"
+   - Confirm deletion
+
+6. **Delete SNS Topics**
+   - Navigate to SNS Dashboard
+   - Select each topic you created
+   - Click "Delete"
+   - Confirm deletion
+
+7. **Delete CloudWatch Alarms and Metric Filters**
+   - Navigate to CloudWatch Dashboard
+   - Select "Alarms" in the left navigation pane
+   - Select each alarm you created
+   - Click "Actions" > "Delete"
+   - Confirm deletion
+   - Navigate to the CloudTrail log group
+   - Select the "Metric filters" tab
+   - Select each metric filter you created
+   - Click "Delete metric filter"
+   - Confirm deletion
+
+8. **Disable AWS Config**
+   - Navigate to AWS Config Dashboard
+   - Click "Settings"
+   - Scroll down and click "Delete configuration recorder" and "Delete delivery channel"
+   - Confirm deletion
+
+9. **Delete AWS Systems Manager Documents**
+   - Navigate to Systems Manager > Documents
+   - Select each document you created
+   - Click "Delete document"
+   - Confirm deletion
+
+10. **Delete CloudTrail Trail**
+    - Navigate to CloudTrail Dashboard
+    - Select your trail
+    - Click "Delete"
+    - Confirm deletion
+
+11. **Delete S3 Buckets** (Optional)
+    - If you want to delete the S3 buckets created for CloudTrail and Config:
+      - First, empty the buckets
+      - Then delete them
+    - Note: You might want to keep these logs for future reference
+
+12. **Verify Clean-Up**
+    - Check the dashboards of each service to ensure everything has been properly disabled or deleted
+
+### Terraform Clean-Up (If Applicable)
+
+If you deployed resources using Terraform, clean-up is much simpler:
+
+1. **Navigate to your Terraform project directory**
+   ```bash
+   cd lab4-terraform
+   ```
+
+2. **Destroy all resources**
+   ```bash
+   terraform destroy
+   ```
+
+3. **Confirm destruction**
+   - Type `yes` when prompted
+   - Wait for all resources to be destroyed
+   - Terraform will output "Destroy complete!" when finished
+
+### Final Check for Hidden Resources
+
+Some resources can be easily missed during clean-up. Check these areas:
+
+1. **CloudWatch Log Groups**
+   - Navigate to CloudWatch > Log groups
+   - Delete any log groups created during the lab
+
+2. **IAM Roles**
+   - Check IAM Dashboard > Roles
+   - Delete any created for this lab
+
+3. **KMS Keys**
+   - Check KMS Dashboard
+   - Disable and schedule deletion of any keys created for this lab
+
+Remember that leaving resources running in AWS will incur charges. Always verify that all resources have been properly deleted after completing labs.
+
+## Resources
+
+- [AWS CloudTrail Documentation](https://docs.aws.amazon.com/awscloudtrail/latest/userguide/cloudtrail-user-guide.html)
+- [AWS Config Documentation](https://docs.aws.amazon.com/config/latest/developerguide/WhatIsConfig.html)
+- [AWS Security Hub Documentation](https://docs.aws.amazon.com/securityhub/latest/userguide/what-is-securityhub.html)
+- [Amazon GuardDuty Documentation](https://docs.aws.amazon.com/guardduty/latest/ug/what-is-guardduty.html)
+- [Amazon CloudWatch Documentation](https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/WhatIsCloudWatch.html)
+- [AWS EventBridge Documentation](https://docs.aws.amazon.com/eventbridge/latest/userguide/what-is-amazon-eventbridge.html)
+- [AWS Systems Manager Documentation](https://docs.aws.amazon.com/systems-manager/latest/userguide/what-is-systems-manager.html)
+- [Amazon Inspector Documentation](https://docs.aws.amazon.com/inspector/latest/userguide/inspector_introduction.html)
+- [AWS Security Best Practices](https://aws.amazon.com/architecture/security-identity-compliance/)
+</div>  

@@ -15,8 +15,16 @@ const config: DocsThemeConfig = {
     text: 'CMU Cloud Security Course Documentation © 2025',
   },
   sidebar: {
-    defaultMenuCollapseLevel: 1,
+    defaultMenuCollapseLevel: 2,
     toggleButton: true,
+    autoCollapse: false,
+    titleComponent: ({ title, type }) => {
+      return type === 'separator' ? (
+        <div className="separator-title">{title}</div>
+      ) : (
+        <>{title}</>
+      )
+    }
   },
   useNextSeoProps() {
     return {
