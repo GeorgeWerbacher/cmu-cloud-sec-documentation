@@ -1,9 +1,36 @@
----
-title: 'Lab 4: AWS Security Services & Monitoring'
-description: 'Implement comprehensive security monitoring and automated incident response in AWS'
+# Lab 4: AWS Security Services & Monitoring
+
+**Implement comprehensive security monitoring and automated incident response in AWS**
+
 ---
 
-# Lab 4: AWS Security Services & Monitoring
+## Navigation
+
+← [Lab 3: Secure AWS Networking](lab-03-secure-networking.md) | [Back to Main](../README.md)
+
+---
+
+## Table of Contents
+
+- [Overview](#overview)
+- [Prerequisites](#prerequisites)
+- [Learning Objectives](#learning-objectives)
+- [Security Monitoring in AWS](#security-monitoring-in-aws)
+- [Reference Architecture](#reference-architecture)
+- [Detailed Instructions](#detailed-instructions)
+  - [Task 1: Configure AWS CloudTrail](#task-1-configure-aws-cloudtrail)
+  - [Task 2: Set Up AWS Config](#task-2-set-up-aws-config)
+  - [Task 3: Implement AWS Security Hub](#task-3-implement-aws-security-hub)
+  - [Task 4: Deploy Amazon GuardDuty](#task-4-deploy-amazon-guardduty)
+  - [Task 5: Create CloudWatch Alarms](#task-5-create-cloudwatch-alarms-for-security-events)
+  - [Task 6: Design Automated Incident Response](#task-6-design-automated-incident-response-with-aws-eventbridge)
+  - [Task 7: Utilize AWS Systems Manager](#task-7-utilize-aws-systems-manager-for-secure-instance-management)
+  - [Task 8: Implement AWS Inspector](#task-8-implement-aws-inspector-for-vulnerability-assessment)
+  - [Task 9: Create Security Incident Playbook](#task-9-create-a-security-incident-playbook)
+- [Cleaning Up Resources](#cleaning-up-resources)
+- [Resources](#resources)
+
+---
 
 ## Overview
 
@@ -729,3 +756,26 @@ Remember that leaving resources running in AWS will incur charges. Always verify
 - [AWS Systems Manager Documentation](https://docs.aws.amazon.com/systems-manager/latest/userguide/what-is-systems-manager.html)
 - [Amazon Inspector Documentation](https://docs.aws.amazon.com/inspector/latest/userguide/inspector_introduction.html)
 - [AWS Security Best Practices](https://aws.amazon.com/architecture/security-identity-compliance/)
+
+---
+
+## Navigation
+
+← [Lab 3: Secure AWS Networking](lab-03-secure-networking.md) | [Back to Main](../README.md)
+
+## Completion
+
+Congratulations! You have completed all four Cloud Security Labs. You should now have:
+
+✅ Comprehensive understanding of AWS security services and best practices
+✅ Hands-on experience with enterprise-grade security monitoring
+✅ Automated threat detection and incident response capabilities
+✅ Real-world skills applicable to production cloud environments
+
+**What's next?**
+- Review the [Lab Resources](resources/lab-resources.md) for continued learning
+- Explore advanced AWS security certifications
+- Apply these concepts in your own cloud projects
+- Share your experience and help others learn cloud security!
+
+**Thank you for completing the Cloud Security Labs series!**

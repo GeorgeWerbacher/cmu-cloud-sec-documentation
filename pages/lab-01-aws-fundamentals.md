@@ -1,11 +1,30 @@
----
-title: 'Lab 1: AWS Account Fundamentals'
-description: 'Learn how to set up and secure an AWS account'
----
-
-<div className="lab-content">
-
 # Lab 1: AWS Account Fundamentals
+
+**Learn how to set up and secure an AWS account**
+
+---
+
+## Navigation
+
+← [Back to Main](../README.md) | [Lab 2: Advanced IAM & Federation](lab-02-iam-federation.md) →
+
+---
+
+## Table of Contents
+
+- [Overview](#overview)
+- [Prerequisites](#prerequisites)
+- [Learning Objectives](#learning-objectives)
+- [Detailed Instructions](#detailed-instructions)
+  - [Task 1: AWS Account Creation](#task-1-aws-account-creation)
+  - [Task 2: Secure Your Root Account](#task-2-secure-your-root-account)
+  - [Task 3: Create an IAM User](#task-3-create-an-iam-user-with-administrative-access)
+  - [Task 4: Set Up Billing Alerts](#task-4-set-up-aws-billing-alerts)
+  - [Task 5: Explore AWS Console](#task-5-explore-the-aws-management-console)
+- [Optional Challenge: Infrastructure as Code](#optional-challenge-infrastructure-as-code-with-terraform)
+- [Resources](#resources)
+
+---
 
 ## Overview
 
@@ -296,4 +315,21 @@ This section introduces Terraform for deploying AWS resources using code. Terraf
 - [Terraform AWS Provider Documentation](https://registry.terraform.io/providers/hashicorp/aws/latest/docs)
 - [AWS CLI Configuration Guide](https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-quickstart.html)
 
-</div>
+
+---
+
+## Navigation
+
+← [Back to Main](../README.md) | [Lab 2: Advanced IAM & Federation](lab-02-iam-federation.md) →
+
+## Next Steps
+
+After completing this lab, you should have:
+
+✅ A secure AWS account with MFA enabled
+✅ An IAM user for daily operations
+✅ Billing alerts configured
+✅ Basic familiarity with the AWS Management Console
+✅ (Optional) Experience with Terraform Infrastructure as Code
+
+**Ready for the next challenge?** Continue to [Lab 2: Advanced IAM & Federation](lab-02-iam-federation.md) to dive deeper into identity management and security controls.

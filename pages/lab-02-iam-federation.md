@@ -1,11 +1,33 @@
----
-title: 'Lab 2: Advanced IAM & Federation'
-description: 'Implement advanced IAM strategies and federation with AWS Identity Center'
----
-
-<div className="lab-content">
-
 # Lab 2: Advanced IAM & Federation
+
+**Implement advanced IAM strategies and federation with AWS Identity Center**
+
+---
+
+## Navigation
+
+← [Lab 1: AWS Account Fundamentals](lab-01-aws-fundamentals.md) | [Back to Main](../README.md) | [Lab 3: Secure AWS Networking](lab-03-secure-networking.md) →
+
+---
+
+## Table of Contents
+
+- [Overview](#overview)
+- [Prerequisites](#prerequisites)
+- [Learning Objectives](#learning-objectives)
+- [The Cloud Threat Landscape](#the-cloud-threat-landscape)
+- [The AWS Shared Responsibility Model](#the-aws-shared-responsibility-model)
+- [Detailed Instructions](#detailed-instructions)
+  - [Task 1: Implement Advanced IAM Policies](#task-1-implement-advanced-iam-policies)
+  - [Task 2: Configure Cross-Account Access](#task-2-configure-cross-account-access)
+  - [Task 3: Set Up AWS Identity Center](#task-3-set-up-aws-identity-center-formerly-aws-sso)
+  - [Task 4: Monitor and Audit with CloudTrail](#task-4-monitor-and-audit-with-cloudtrail)
+- [Understanding the Threat Model](#understanding-the-threat-model)
+- [Optional Challenge: Automated IAM Remediation](#optional-challenge-implement-automated-iam-remediation)
+- [Infrastructure as Code with Terraform](#infrastructure-as-code-with-terraform)
+- [Resources](#resources)
+
+---
 
 ## Overview
 
@@ -880,4 +902,24 @@ Remember to always review the `terraform plan` output before applying changes, a
 - [AWS Identity Center Documentation](https://docs.aws.amazon.com/singlesignon/latest/userguide/what-is.html)
 - [AWS CloudTrail Documentation](https://docs.aws.amazon.com/awscloudtrail/latest/userguide/cloudtrail-user-guide.html)
 - [Cloud Security Alliance Top Threats](https://cloudsecurityalliance.org/research/top-threats/) 
-</div>  
+
+
+---
+
+## Navigation
+
+← [Lab 1: AWS Account Fundamentals](lab-01-aws-fundamentals.md) | [Back to Main](../README.md) | [Lab 3: Secure AWS Networking](lab-03-secure-networking.md) →
+
+## Next Steps
+
+After completing this lab, you should have:
+
+✅ Understanding of cloud threat landscape and security models
+✅ Advanced IAM policies with least privilege access
+✅ Cross-account access patterns configured
+✅ AWS Identity Center federation setup
+✅ CloudTrail monitoring and alerting
+✅ (Optional) Automated security remediation workflows
+✅ (Optional) Terraform Infrastructure as Code implementation
+
+**Ready for the next challenge?** Continue to [Lab 3: Secure AWS Networking](lab-03-secure-networking.md) to learn about building secure network architectures.

@@ -1,9 +1,35 @@
----
-title: 'Lab 3: Secure AWS Networking'
-description: 'Design and implement secure network architecture in AWS'
+# Lab 3: Secure AWS Networking
+
+**Design and implement secure network architecture in AWS**
+
 ---
 
-# Lab 3: Secure AWS Networking
+## Navigation
+
+← [Lab 2: Advanced IAM & Federation](lab-02-iam-federation.md) | [Back to Main](../README.md) | [Lab 4: AWS Security Services & Monitoring](lab-04-security-monitoring.md) →
+
+---
+
+## Table of Contents
+
+- [Overview](#overview)
+- [Prerequisites](#prerequisites)
+- [Learning Objectives](#learning-objectives)
+- [Network Security in AWS](#network-security-in-aws)
+- [Reference Architecture](#reference-architecture)
+- [Detailed Instructions](#detailed-instructions)
+  - [Task 1: Create a Secure VPC Architecture](#task-1-create-a-secure-vpc-architecture)
+  - [Task 2: Implement Security Groups](#task-2-implement-security-groups)
+  - [Task 3: Deploy EC2 Instances](#task-3-deploy-ec2-instances-in-the-architecture)
+  - [Task 4: Configure VPC Flow Logs](#task-4-configure-vpc-flow-logs)
+  - [Task 5: Implement VPC Endpoints](#task-5-implement-vpc-endpoints)
+  - [Task 6: Implement VPC Peering](#task-6-implement-a-second-vpc-and-peering)
+  - [Task 7: Transit Gateway (Optional)](#task-7-implement-transit-gateway-optional)
+- [Infrastructure as Code with Terraform](#infrastructure-as-code-with-terraform)
+- [Cleaning Up Resources](#cleaning-up-resources)
+- [Resources](#resources)
+
+---
 
 ## Overview
 
@@ -1048,4 +1074,24 @@ Remember that leaving resources running in AWS will incur charges. Always verify
 - [AWS Transit Gateway Documentation](https://docs.aws.amazon.com/vpc/latest/tgw/what-is-transit-gateway.html)
 - [Terraform AWS Provider Documentation](https://registry.terraform.io/providers/hashicorp/aws/latest/docs)
 - [Network Security Best Practices](https://aws.amazon.com/architecture/security-identity-compliance/?cards-all.sort-by=item.additionalFields.sortDate&cards-all.sort-order=desc) 
-</div>  
+
+
+---
+
+## Navigation
+
+← [Lab 2: Advanced IAM & Federation](lab-02-iam-federation.md) | [Back to Main](../README.md) | [Lab 4: AWS Security Services & Monitoring](lab-04-security-monitoring.md) →
+
+## Next Steps
+
+After completing this lab, you should have:
+
+✅ Multi-tier VPC architecture with proper segmentation
+✅ Security Groups and NACLs configured for defense-in-depth
+✅ VPC Flow Logs monitoring network traffic
+✅ VPC Endpoints for secure AWS service access
+✅ Cross-VPC connectivity using peering or Transit Gateway
+✅ Bastion host architecture for secure administrative access
+✅ (Optional) Terraform Infrastructure as Code implementation
+
+**Ready for the final challenge?** Continue to [Lab 4: AWS Security Services & Monitoring](lab-04-security-monitoring.md) to implement comprehensive security monitoring and automated incident response.
