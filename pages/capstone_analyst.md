@@ -5,9 +5,8 @@
 1. [Project Overview](#project-overview)
 2. [Project Scope](#project-scope)
 3. [Presentation Requirements](#presentation-requirements)
-4. [Weekly Timeline](#weekly-timeline)
-5. [Grading Rubric](#grading-rubric)
-6. [Resources](#resources)
+4. [Grading Rubric](#grading-rubric)
+5. [Resources](#resources)
 
 ---
 
