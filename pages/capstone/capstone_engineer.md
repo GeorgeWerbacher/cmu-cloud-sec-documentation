@@ -12,7 +12,15 @@
 
 ## Project Overview
 
-**Role:** Design and demonstrate a security automation solution for MedTech's cloud environment.
+**Role:** As a Cloud Security Engineer for MedTech, you will develop automation solutions that enhance security operations and monitoring capabilities. Your focus is creating tools and scripts that improve visibility, streamline security processes, or enhance incident response capabilities for MedTech's AI infrastructure while adhering to AWS Well-Architected Framework principles.
+
+Key Responsibilities
+- Design and implement security automation solutions
+- Develop monitoring and alerting capabilities
+- Create tools for security compliance checking
+- Automate incident response procedures
+- Build security orchestration workflows
+- Document and test automation solutions
 
 **Final Deliverable:** 15-20 minute presentation with slides (including demo or walkthrough)
 
