@@ -5,15 +5,22 @@
 1. [Project Overview](#project-overview)
 2. [Project Scope](#project-scope)
 3. [Presentation Requirements](#presentation-requirements)
-4. [Weekly Timeline](#weekly-timeline)
-5. [Grading Rubric](#grading-rubric)
-6. [Resources](#resources)
+4. [Grading Rubric](#grading-rubric)
+5. [Resources](#resources)
 
 ---
 
 ## Project Overview
 
-**Role:** Design a secure AWS infrastructure component for MedTech's AI initiative.
+**Role:** As a Cloud Security Architect for MedTech, you will design and implement secure cloud infrastructure to support the organization's AI transformation. Your focus is creating a foundational cloud architecture pattern that balances security controls with the performance requirements of AI workloads while adhering to AWS Well-Architected Framework principles.
+
+Key Responsibilities
+- Design secure AWS infrastructure components
+- Implement defense-in-depth security controls
+- Document security architecture decisions
+- Ensure HIPAA compliance for healthcare data
+- Create reusable infrastructure patterns
+
 
 **Final Deliverable:** 15-20 minute presentation with slides
 
