@@ -12,7 +12,15 @@
 
 ## Project Overview
 
-**Role:** Assess a pre-built AWS environment for security gaps using the CSA CCM framework.
+**Role:** As a Cloud Security Analyst for MedTech, you will evaluate a pre-built AWS environment against the Cloud Security Alliance Cloud Controls Matrix (CSA CCM) and AWS Well-Architected Framework. Your analysis will identify security gaps, assess risks, and provide actionable recommendations for improving the security posture of MedTech's AI infrastructure.
+
+Key Responsibilities
+- Conduct systematic security assessment using CCM framework
+- Map findings to AWS Well-Architected Framework
+- Identify and prioritize security gaps
+- Assess risks with business impact analysis
+- Provide actionable, AWS-specific remediation guidance
+- Document compliance status for healthcare requirements
 
 **Final Deliverable:** 15-20 minute presentation with slides
 
